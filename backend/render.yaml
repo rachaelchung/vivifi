@@ -1,0 +1,27 @@
+# Render blueprint. See https://render.com/docs/yaml-spec.
+# Attach a Postgres (e.g. Neon) and paste the connection string into
+# DATABASE_URL in the Render dashboard; JWT_SECRET should be generated once
+# with `python -c "import secrets; print(secrets.token_urlsafe(48))"` and
+# stored as a secret env var.
+services:
+  - type: web
+    name: vivifi-api
+    env: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt && alembic upgrade head
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_ALGORITHM
+        value: HS256
+      - key: JWT_EXPIRE_MINUTES
+        value: "10080"
+      - key: CORS_ORIGINS
+        sync: false
