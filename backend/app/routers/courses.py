@@ -22,6 +22,7 @@ def _serialize(course: Course) -> CourseRead:
             "color": course.color,
             "target_grade": course.target_grade,
             "timezone": course.timezone,
+            "syllabus_committed_at": course.syllabus_committed_at,
             "created_at": course.created_at,
             "updated_at": course.updated_at,
         }
@@ -46,6 +47,16 @@ def _get_owned_course(db: Session, course_slug: str, user: User) -> Course:
     if course is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course not found.")
     return course
+
+
+@router.get("/{slug}", response_model=CourseRead)
+def get_course(
+    slug: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> CourseRead:
+    course = _get_owned_course(db, slug, current_user)
+    return _serialize(course)
 
 
 @router.get("", response_model=list[CourseRead])

@@ -1,10 +1,12 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { useAuth } from "@/contexts/AuthContext";
+import CourseDetailPage from "@/pages/CourseDetailPage";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
 import SemesterSetupPage from "@/pages/SemesterSetupPage";
 import SemesterHubPage from "@/pages/SemesterHubPage";
+import SyllabusReviewPage from "@/pages/SyllabusReviewPage";
 
 function LoadingScreen() {
   return (
@@ -52,6 +54,22 @@ export default function App() {
         element={
           <RequireAuth>
             <SemesterSetupPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/courses/:slug"
+        element={
+          <RequireAuth>
+            <CourseDetailPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/courses/:slug/review"
+        element={
+          <RequireAuth>
+            <SyllabusReviewPage />
           </RequireAuth>
         }
       />

@@ -13,6 +13,15 @@ class Settings(BaseSettings):
 
     cors_origins: str = "http://localhost:5173"
 
+    # Claude configuration. Empty ANTHROPIC_API_KEY disables live extraction —
+    # the endpoint returns a helpful 503 so devs know why. Model is configurable
+    # so we can upgrade without a code change.
+    anthropic_api_key: str = ""
+    anthropic_model: str = "claude-sonnet-4-5"
+
+    # Syllabus PDF upload size cap (SPEC: 10 MB). Bytes.
+    syllabus_max_bytes: int = 10 * 1024 * 1024
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

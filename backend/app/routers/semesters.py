@@ -35,7 +35,10 @@ def list_semesters(
         db.execute(
             select(Semester)
             .where(Semester.user_id == current_user.id)
-            .order_by(Semester.is_active.desc(), Semester.created_at.desc())
+            # Stable, creation-order tabs (older on the left, newer on the
+            # right) — like browser tabs. Independent of which one is active,
+            # so switching the active semester never rearranges the row.
+            .order_by(Semester.created_at.asc())
         )
         .scalars()
         .all()

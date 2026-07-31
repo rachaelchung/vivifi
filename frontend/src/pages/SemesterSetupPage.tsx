@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import { ApiError } from "@/api/client";
@@ -12,22 +12,13 @@ export default function SemesterSetupPage() {
   const isFirstRun = params.get("first_run") === "1";
   const { signOut, user } = useAuth();
 
-  const { data: semesters, isLoading } = useSemesters();
+  const { data: semesters } = useSemesters();
   const createSemester = useCreateSemester();
 
   const [name, setName] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [error, setError] = useState<string | null>(null);
-
-  // If we arrived here and the user already has semesters (and wasn't sent from
-  // the "new semester" menu explicitly), send them home. Prevents the setup
-  // screen from acting as an accidental default landing.
-  useEffect(() => {
-    if (!isLoading && semesters && semesters.length > 0 && !isFirstRun) {
-      navigate("/", { replace: true });
-    }
-  }, [isLoading, semesters, isFirstRun, navigate]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

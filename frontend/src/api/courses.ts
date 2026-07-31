@@ -4,6 +4,7 @@ import { apiRequest } from "@/api/client";
 import type { Course, CourseCreatePayload } from "@/api/types";
 
 const coursesKey = (semesterSlug: string | null) => ["courses", semesterSlug] as const;
+const courseKey = (slug: string | null) => ["course", slug] as const;
 
 export function useCoursesForSemester(semesterSlug: string | null) {
   return useQuery({
@@ -13,6 +14,14 @@ export function useCoursesForSemester(semesterSlug: string | null) {
         semesterSlug ? `/courses?semester_slug=${encodeURIComponent(semesterSlug)}` : "/courses",
       ),
     enabled: semesterSlug !== null,
+  });
+}
+
+export function useCourse(slug: string | null) {
+  return useQuery({
+    queryKey: courseKey(slug),
+    queryFn: () => apiRequest<Course>(`/courses/${slug}`),
+    enabled: !!slug,
   });
 }
 

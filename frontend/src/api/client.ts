@@ -47,6 +47,36 @@ export async function apiRequest<T>(
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 
+  return finalizeResponse<T>(response);
+}
+
+interface UploadOptions {
+  auth?: boolean;
+}
+
+/** Multipart upload variant. Do NOT set Content-Type manually — the browser
+ * fills in the correct multipart boundary. */
+export async function apiUpload<T>(
+  path: string,
+  form: FormData,
+  { auth = true }: UploadOptions = {},
+): Promise<T> {
+  const headers: Record<string, string> = {};
+  if (auth) {
+    const token = getToken();
+    if (token) headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    headers,
+    body: form,
+  });
+
+  return finalizeResponse<T>(response);
+}
+
+async function finalizeResponse<T>(response: Response): Promise<T> {
   if (response.status === 204) {
     return undefined as T;
   }

@@ -41,5 +41,6 @@ class CourseRead(CourseBase):
 
     slug: str
     semester_slug: str
+    syllabus_committed_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
