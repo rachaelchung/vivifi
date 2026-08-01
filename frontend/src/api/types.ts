@@ -139,3 +139,224 @@ export interface SyllabusExtractResponse {
   looks_incomplete: boolean;
   has_no_assignments: boolean;
 }
+
+// --- Milestone 3: live views ---
+
+export interface GradeCategory {
+  id: number;
+  name: string;
+  weight_pct: number;
+  drop_lowest_n: number;
+}
+
+export interface GradeCategoryCreatePayload {
+  name: string;
+  weight_pct: number;
+  drop_lowest_n?: number;
+}
+
+export interface GradeCategoryUpdatePayload {
+  name?: string;
+  weight_pct?: number;
+  drop_lowest_n?: number;
+}
+
+export interface GradeScaleBand {
+  id: number;
+  letter: string;
+  min_pct: number;
+}
+
+export interface GradeScaleBandInput {
+  letter: string;
+  min_pct: number;
+}
+
+export interface Assignment {
+  slug: string;
+  name: string;
+  kind: AssignmentKind;
+  // ISO date (YYYY-MM-DD) or null.
+  due_date: string | null;
+  source: "syllabus" | "manual" | "sms";
+  completed: boolean;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AssignmentCreatePayload {
+  name: string;
+  kind?: AssignmentKind;
+  due_date?: string | null;
+  notes?: string | null;
+}
+
+export interface AssignmentUpdatePayload {
+  name?: string;
+  kind?: AssignmentKind;
+  due_date?: string | null;
+  completed?: boolean;
+  notes?: string | null;
+}
+
+export interface GradebookEntry {
+  slug: string;
+  name: string;
+  category_id: number | null;
+  points_earned: number | null;
+  points_possible: number;
+  source: "syllabus" | "manual" | "sms";
+  source_assignment_id: number | null;
+  hidden: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GradebookEntryCreatePayload {
+  name: string;
+  category_id?: number | null;
+  points_possible: number;
+  points_earned?: number | null;
+}
+
+export interface GradebookEntryUpdatePayload {
+  name?: string;
+  category_id?: number | null;
+  points_earned?: number | null;
+  points_possible?: number;
+  hidden?: boolean;
+}
+
+export interface OfficeHourHost {
+  id: number;
+  name: string;
+  role: HostRole;
+  email: string | null;
+  zoom_link: string | null;
+  notes: string | null;
+}
+
+export interface OfficeHourHostCreatePayload {
+  name: string;
+  role?: HostRole;
+  email?: string | null;
+  zoom_link?: string | null;
+  notes?: string | null;
+}
+
+export interface OfficeHour {
+  id: number;
+  host_id: number;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  location: string | null;
+}
+
+export interface OfficeHourCreatePayload {
+  host_id: number;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  location?: string | null;
+}
+
+export interface CourseNote {
+  id: number;
+  heading: string;
+  body: string;
+  source: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CourseNoteCreatePayload {
+  heading: string;
+  body: string;
+}
+
+export interface CourseNoteUpdatePayload {
+  heading?: string;
+  body?: string;
+}
+
+// Current-grade + prediction
+
+export interface CategoryEarned {
+  category_id: number;
+  name: string;
+  weight_pct: number;
+  earned_pct: number | null;
+  has_grades: boolean;
+}
+
+export interface CurrentGrade {
+  percentage: number | null;
+  letter: string | null;
+  breakdown: CategoryEarned[];
+  target: string | null;
+  target_pct: number | null;
+}
+
+export type PredictKind =
+  | "current_grade"
+  | "needed_on_category"
+  | "needed_on_entry"
+  | "scenarios"
+  | "reweight"
+  | "reweight_scenarios"
+  | "unknown";
+
+export type ScenarioLegRole = "anchor" | "solve";
+
+export interface ScenarioLeg {
+  entry_name: string;
+  role: ScenarioLegRole;
+  pct: number;
+}
+
+export type ScenarioId = "ace" | "steady" | "recover" | string;
+
+export interface Scenario {
+  id: ScenarioId;
+  label: string;
+  description: string;
+  anchor_pct: number | null;
+  solve_pct: number | null;
+  resulting_grade_pct: number;
+  resulting_letter: string | null;
+  reachable: boolean;
+  already_locked_in: boolean;
+  legs: ScenarioLeg[];
+}
+
+export interface ReweightScaled {
+  name: string;
+  original_weight_pct: number;
+  scaled_weight_pct: number;
+}
+
+export interface ReweightApplied {
+  new_category_name: string;
+  new_weight_pct: number;
+  scaled: ReweightScaled[];
+}
+
+export interface PredictResponse {
+  kind: PredictKind;
+  answer: number | null;
+  letter: string | null;
+  reachable: boolean | null;
+  already_locked_in: boolean | null;
+  explanation: string;
+  target: string | null;
+  target_pct: number | null;
+  target_category_name: string | null;
+  target_entry_name: string | null;
+  needed_points: number | null;
+  current_pct: number | null;
+  current_letter: string | null;
+  scenarios: Scenario[] | null;
+  reweight_applied: ReweightApplied | null;
+}

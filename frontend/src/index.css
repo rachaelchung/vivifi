@@ -74,3 +74,90 @@ body {
 .hint {
   @apply mt-1 text-xs text-muted;
 }
+
+/* FullCalendar overrides. FullCalendar ships a lot of default chrome; strip
+ * it back so the calendar reads like the rest of Vivifi (calm, ink-on-cream)
+ * and let per-event colors carry the meaning. */
+.fc {
+  --fc-border-color: var(--color-border);
+  --fc-page-bg-color: transparent;
+  --fc-neutral-bg-color: var(--color-bg);
+  --fc-today-bg-color: transparent;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+.fc .fc-daygrid-day-number {
+  color: var(--color-muted);
+  padding: 6px 8px;
+  font-size: 12px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+/* Today: circle on the day number only — no full-cell tint. */
+.fc .fc-day-today .fc-daygrid-day-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  margin: 4px 6px;
+  padding: 0;
+  border-radius: 9999px;
+  background: var(--color-accent);
+  color: var(--color-accent-fg, #fff);
+  font-weight: 600;
+}
+
+.fc .fc-col-header-cell-cushion {
+  color: var(--color-muted);
+  font-weight: 500;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 8px 6px;
+}
+
+.fc .fc-daygrid-event {
+  border-radius: 6px;
+  padding: 3px 5px;
+  font-size: 12px;
+  font-weight: 500;
+  overflow: hidden;
+  white-space: normal;
+  line-height: 1.25;
+}
+
+.fc .fc-daygrid-event .fc-event-main {
+  color: inherit;
+}
+
+.vv-event-inner {
+  width: 100%;
+}
+
+.vv-event-check {
+  cursor: pointer;
+}
+
+/* Exams: a bit larger + a distinctive left rule so they stand out even at a
+ * glance. Non-draggable, per SPEC (backend also rejects the mutation). */
+.vv-event-exam {
+  padding: 4px 6px 4px 8px !important;
+  border-left-width: 4px !important;
+  border-left-color: rgba(0, 0, 0, 0.35) !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+}
+
+.vv-event-assignment {
+  cursor: grab;
+}
+
+.vv-event-assignment:active {
+  cursor: grabbing;
+}
+
+.vv-event-done {
+  cursor: pointer !important;
+  filter: grayscale(0.35);
+}

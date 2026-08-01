@@ -2,7 +2,19 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routers import auth, courses, semesters, syllabus
+from app.routers import (
+    assignments,
+    auth,
+    categories,
+    courses,
+    grade,
+    gradebook,
+    grading_scale,
+    notes,
+    office_hours,
+    semesters,
+    syllabus,
+)
 
 settings = get_settings()
 
@@ -20,6 +32,16 @@ app.include_router(auth.router)
 app.include_router(semesters.router)
 app.include_router(courses.router)
 app.include_router(syllabus.router)
+
+# Milestone 3: grade math + live views.
+app.include_router(categories.router)
+app.include_router(grading_scale.router)
+app.include_router(assignments.router)
+app.include_router(gradebook.router)
+app.include_router(office_hours.hosts_router)
+app.include_router(office_hours.hours_router)
+app.include_router(notes.router)
+app.include_router(grade.router)
 
 
 @app.get("/health", tags=["meta"])

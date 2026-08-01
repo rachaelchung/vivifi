@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { useAuth } from "@/contexts/AuthContext";
+import CalendarPage from "@/pages/CalendarPage";
 import CourseDetailPage from "@/pages/CourseDetailPage";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
@@ -70,6 +71,14 @@ export default function App() {
         element={
           <RequireAuth>
             <SyllabusReviewPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/calendar"
+        element={
+          <RequireAuth>
+            <CalendarPage />
           </RequireAuth>
         }
       />

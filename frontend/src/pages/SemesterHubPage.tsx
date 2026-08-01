@@ -63,6 +63,10 @@ export default function SemesterHubPage() {
     if (selectedSlug === slug) setSelectedSlug(null);
   }
 
+  function handleRenameSemester(slug: string, name: string) {
+    updateSemester.mutate({ slug, payload: { name } });
+  }
+
   async function handleDeleteCourse(slug: string) {
     const target = courses?.find((c) => c.slug === slug);
     if (!target) return;
@@ -78,14 +82,16 @@ export default function SemesterHubPage() {
       <header className="border-b border-border">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
           <BrandMark />
-          {user ? (
-            <div className="flex items-center gap-4 text-sm">
-              <span className="text-muted">{user.email}</span>
-              <button className="btn-ghost" onClick={signOut} type="button">
-                Sign out
-              </button>
-            </div>
-          ) : null}
+          <div className="flex items-center gap-4 text-sm">
+            {user ? (
+              <>
+                <span className="text-muted">{user.email}</span>
+                <button className="btn-ghost" onClick={signOut} type="button">
+                  Sign out
+                </button>
+              </>
+            ) : null}
+          </div>
         </div>
       </header>
 
@@ -98,6 +104,7 @@ export default function SemesterHubPage() {
               semesters={semesters}
               activeSlug={selectedSlug}
               onSelect={handleSelectSemester}
+              onRename={handleRenameSemester}
               onDelete={handleDeleteSemester}
             />
 

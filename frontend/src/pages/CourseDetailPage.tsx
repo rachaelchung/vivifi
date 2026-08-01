@@ -1,7 +1,14 @@
+import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { useCourse } from "@/api/courses";
+import { useNotes } from "@/api/liveViews";
 import { BrandMark } from "@/components/BrandMark";
+import { AssignmentsTab } from "@/components/courseDetail/AssignmentsTab";
+import { GradebookTab } from "@/components/courseDetail/GradebookTab";
+import { InstructorsTab } from "@/components/courseDetail/InstructorsTab";
+import { NotesTab } from "@/components/courseDetail/NotesTab";
+import { TabNav, type CourseTabId } from "@/components/courseDetail/TabNav";
 import { SyllabusUpload } from "@/components/SyllabusUpload";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -10,6 +17,12 @@ export default function CourseDetailPage() {
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { data: course, isLoading, error } = useCourse(slug ?? null);
+
+  const [tab, setTab] = useState<CourseTabId>("gradebook");
+  // Notes tab is conditional on there being at least one note — SPEC.
+  // The hook is enabled even before the course loads so the count is ready.
+  const notesQ = useNotes(course?.syllabus_committed_at ? course.slug : null);
+  const showNotes = (notesQ.data?.length ?? 0) > 0;
 
   return (
     <div
@@ -28,14 +41,16 @@ export default function CourseDetailPage() {
               Semester
             </Link>
           </div>
-          {user ? (
-            <div className="flex items-center gap-4 text-sm">
-              <span className="text-muted">{user.email}</span>
-              <button className="btn-ghost" onClick={signOut} type="button">
-                Sign out
-              </button>
-            </div>
-          ) : null}
+          <div className="flex items-center gap-4 text-sm">
+            {user ? (
+              <>
+                <span className="text-muted">{user.email}</span>
+                <button className="btn-ghost" onClick={signOut} type="button">
+                  Sign out
+                </button>
+              </>
+            ) : null}
+          </div>
         </div>
       </header>
 
@@ -51,7 +66,7 @@ export default function CourseDetailPage() {
           </div>
         ) : (
           <>
-            <div className="mb-8 flex items-center gap-4">
+            <div className="mb-6 flex items-center gap-4">
               <span
                 aria-hidden
                 className="h-6 w-6 flex-shrink-0 rounded-md"
@@ -73,7 +88,27 @@ export default function CourseDetailPage() {
             </div>
 
             {course.syllabus_committed_at ? (
-              <CommittedShell />
+              <>
+                <TabNav
+                  active={tab}
+                  onSelect={setTab}
+                  showNotes={showNotes}
+                />
+                <div className="mt-6">
+                  {tab === "gradebook" ? (
+                    <GradebookTab courseSlug={course.slug} />
+                  ) : null}
+                  {tab === "assignments" ? (
+                    <AssignmentsTab courseSlug={course.slug} />
+                  ) : null}
+                  {tab === "instructors" ? (
+                    <InstructorsTab courseSlug={course.slug} />
+                  ) : null}
+                  {tab === "notes" && showNotes ? (
+                    <NotesTab courseSlug={course.slug} />
+                  ) : null}
+                </div>
+              </>
             ) : (
               <section>
                 <div className="mb-6">
@@ -105,26 +140,6 @@ export default function CourseDetailPage() {
           </>
         )}
       </main>
-    </div>
-  );
-}
-
-function CommittedShell() {
-  // Milestone 2 lands the ingestion pipeline; the live Gradebook / Assignments
-  // / Instructors tabs come in Milestone 3. This is the intentional stub.
-  return (
-    <div className="card p-8">
-      <p className="text-xs font-medium uppercase tracking-wider text-accent">
-        Syllabus committed
-      </p>
-      <h2 className="mt-1 text-xl font-semibold tracking-tight">
-        Your syllabus is live.
-      </h2>
-      <p className="mt-2 max-w-2xl text-sm text-muted">
-        The Gradebook, Assignments, Instructors, and Calendar tabs land in the
-        next milestone. Your data is safely stored — nothing you commit here is
-        lost.
-      </p>
     </div>
   );
 }

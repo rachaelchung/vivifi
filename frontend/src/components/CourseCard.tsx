@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 
+import { useCurrentGrade } from "@/api/liveViews";
 import type { Course } from "@/api/types";
 
 interface CourseCardProps {
@@ -9,6 +10,11 @@ interface CourseCardProps {
 
 export function CourseCard({ course, onDelete }: CourseCardProps) {
   const isCommitted = course.syllabus_committed_at !== null;
+  // Only fetch grade for committed courses — uncommitted ones don't have any
+  // categories / entries yet, so the query would return an empty result anyway.
+  const gradeQ = useCurrentGrade(isCommitted ? course.slug : null);
+  const percentage = gradeQ.data?.percentage;
+  const letter = gradeQ.data?.letter;
 
   return (
     <article
@@ -46,7 +52,14 @@ export function CourseCard({ course, onDelete }: CourseCardProps) {
                 <span className="text-xs uppercase tracking-wider text-muted">
                   Grade
                 </span>
-                <span className="font-num text-2xl font-semibold text-fg">—</span>
+                <span className="font-num text-2xl font-semibold text-fg">
+                  {percentage !== null && percentage !== undefined
+                    ? `${Math.round(percentage * 10) / 10}%`
+                    : "—"}
+                  {letter ? (
+                    <span className="ml-2 text-base text-muted">{letter}</span>
+                  ) : null}
+                </span>
               </div>
             ) : (
               <div className="flex items-center gap-2 text-sm text-accent">
@@ -70,7 +83,9 @@ export function CourseCard({ course, onDelete }: CourseCardProps) {
             )}
             <p className="mt-1 text-xs text-muted">
               {isCommitted
-                ? "Live view coming in the next milestone."
+                ? percentage === null
+                  ? "Enter your first grade to see it here."
+                  : "Live from your gradebook."
                 : "Bring this course to life."}
             </p>
           </div>
