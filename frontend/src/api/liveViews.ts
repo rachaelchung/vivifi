@@ -21,6 +21,8 @@ import type {
   OfficeHourCreatePayload,
   OfficeHourHost,
   OfficeHourHostCreatePayload,
+  OfficeHourHostUpdatePayload,
+  OfficeHourUpdatePayload,
   PredictResponse,
 } from "@/api/types";
 
@@ -277,6 +279,27 @@ export function useCreateOfficeHourHost(slug: string) {
   });
 }
 
+export function useUpdateOfficeHourHost(slug: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: number;
+      payload: OfficeHourHostUpdatePayload;
+    }) =>
+      apiRequest<OfficeHourHost>(`/courses/${slug}/office-hour-hosts/${id}`, {
+        method: "PATCH",
+        body: payload,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: hostsKey(slug) });
+      qc.invalidateQueries({ queryKey: hoursKey(slug) });
+    },
+  });
+}
+
 export function useDeleteOfficeHourHost(slug: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -307,6 +330,24 @@ export function useCreateOfficeHour(slug: string) {
     mutationFn: (payload: OfficeHourCreatePayload) =>
       apiRequest<OfficeHour>(`/courses/${slug}/office-hours`, {
         method: "POST",
+        body: payload,
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: hoursKey(slug) }),
+  });
+}
+
+export function useUpdateOfficeHour(slug: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: number;
+      payload: OfficeHourUpdatePayload;
+    }) =>
+      apiRequest<OfficeHour>(`/courses/${slug}/office-hours/${id}`, {
+        method: "PATCH",
         body: payload,
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: hoursKey(slug) }),

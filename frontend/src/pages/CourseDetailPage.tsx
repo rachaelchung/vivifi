@@ -3,13 +3,16 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { useCourse } from "@/api/courses";
 import { useNotes } from "@/api/liveViews";
+import type { SyllabusExtractResponse } from "@/api/types";
 import { BrandMark } from "@/components/BrandMark";
 import { AssignmentsTab } from "@/components/courseDetail/AssignmentsTab";
 import { GradebookTab } from "@/components/courseDetail/GradebookTab";
 import { InstructorsTab } from "@/components/courseDetail/InstructorsTab";
 import { NotesTab } from "@/components/courseDetail/NotesTab";
 import { TabNav, type CourseTabId } from "@/components/courseDetail/TabNav";
+import { EditCourseModal } from "@/components/EditCourseModal";
 import { SyllabusUpload } from "@/components/SyllabusUpload";
+import { emptyManualExtraction } from "@/components/syllabusReview/constants";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function CourseDetailPage() {
@@ -19,10 +22,30 @@ export default function CourseDetailPage() {
   const { data: course, isLoading, error } = useCourse(slug ?? null);
 
   const [tab, setTab] = useState<CourseTabId>("gradebook");
+  const [editOpen, setEditOpen] = useState(false);
   // Notes tab is conditional on there being at least one note — SPEC.
   // The hook is enabled even before the course loads so the count is ready.
   const notesQ = useNotes(course?.syllabus_committed_at ? course.slug : null);
   const showNotes = (notesQ.data?.length ?? 0) > 0;
+
+  function goToReview(response: SyllabusExtractResponse, manual = false) {
+    if (!course) return;
+    navigate(`/courses/${course.slug}/review`, {
+      state: { response, manual },
+    });
+  }
+
+  function handleSetupManually() {
+    if (!course) return;
+    goToReview(
+      {
+        extraction: emptyManualExtraction(course),
+        looks_incomplete: false,
+        has_no_assignments: true,
+      },
+      true,
+    );
+  }
 
   return (
     <div
@@ -66,26 +89,48 @@ export default function CourseDetailPage() {
           </div>
         ) : (
           <>
-            <div className="mb-6 flex items-center gap-4">
+            <div className="group/course mb-6 flex items-start gap-4">
               <span
                 aria-hidden
-                className="h-6 w-6 flex-shrink-0 rounded-md"
+                className="mt-1.5 h-6 w-6 flex-shrink-0 rounded-md"
                 style={{ backgroundColor: course.color }}
               />
-              <div>
+              <div className="min-w-0 flex-1">
                 {course.code ? (
                   <p className="font-num text-xs uppercase tracking-wider text-muted">
                     {course.code}
                   </p>
                 ) : null}
-                <h1 className="text-3xl font-semibold tracking-tight">
-                  {course.name}
-                </h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-3xl font-semibold tracking-tight">
+                    {course.name}
+                  </h1>
+                  <button
+                    type="button"
+                    onClick={() => setEditOpen(true)}
+                    className={
+                      "flex-shrink-0 rounded p-1.5 text-muted opacity-50 transition-opacity " +
+                      "hover:bg-bg hover:text-fg hover:opacity-100 " +
+                      "focus-visible:opacity-100 focus-visible:outline-none " +
+                      "group-hover/course:opacity-100"
+                    }
+                    aria-label="Edit course details"
+                    title="Edit course"
+                  >
+                    <PencilIcon />
+                  </button>
+                </div>
                 {course.instructor_name ? (
                   <p className="mt-1 text-sm text-muted">{course.instructor_name}</p>
                 ) : null}
               </div>
             </div>
+
+            <EditCourseModal
+              open={editOpen}
+              onClose={() => setEditOpen(false)}
+              course={course}
+            />
 
             {course.syllabus_committed_at ? (
               <>
@@ -99,7 +144,10 @@ export default function CourseDetailPage() {
                     <GradebookTab courseSlug={course.slug} />
                   ) : null}
                   {tab === "assignments" ? (
-                    <AssignmentsTab courseSlug={course.slug} />
+                    <AssignmentsTab
+                      courseSlug={course.slug}
+                      timezone={course.timezone}
+                    />
                   ) : null}
                   {tab === "instructors" ? (
                     <InstructorsTab courseSlug={course.slug} />
@@ -129,17 +177,45 @@ export default function CourseDetailPage() {
                 <SyllabusUpload
                   courseSlug={course.slug}
                   courseColor={course.color}
-                  onExtracted={(response) =>
-                    navigate(`/courses/${course.slug}/review`, {
-                      state: { response },
-                    })
-                  }
+                  onExtracted={(response) => goToReview(response)}
                 />
+
+                <div className="mt-8 flex flex-col items-center gap-3 border-t border-border pt-8 text-center">
+                  <p className="text-sm text-muted">
+                    No syllabus handy? You can still fill everything in by hand.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={handleSetupManually}
+                  >
+                    Set up manually
+                  </button>
+                </div>
               </section>
             )}
           </>
         )}
       </main>
     </div>
+  );
+}
+
+function PencilIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
   );
 }

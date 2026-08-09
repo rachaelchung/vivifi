@@ -2,9 +2,9 @@
 
 Two subtle behaviors codified here:
 
-- **PATCH rejects `due_date` changes on exams** (SPEC acceptance criteria).
-  Exams are prof-set; students shouldn't casually reschedule them via
-  drag-and-drop.
+- **Exams are non-draggable in the calendar UI**, but intentional due-date
+  edits via the Assignments list (or any explicit PATCH) are allowed — a
+  professor delay is a real case.
 - **DELETE optionally cascades to the linked GradebookEntry** via
   `?cascade_gradebook=true`. The default is to null out `source_assignment_id`
   on the paired entry, matching the SPEC lifecycle rules.
@@ -93,21 +93,6 @@ def update_assignment(
 ) -> AssignmentRead:
     row = _get_owned_assignment(db, course_slug, assignment_slug, current_user)
     data = payload.model_dump(exclude_unset=True)
-
-    # SPEC: reject due_date changes on exams. The frontend renders them as
-    # non-draggable, but this is the actual enforcement — a student who
-    # crafts a raw request still can't move an exam via drag-and-drop.
-    if "due_date" in data and row.kind == "exam":
-        # We do allow the *value* to be re-sent if it matches (idempotent),
-        # so that a UI that PATCHes-all-fields doesn't fail spuriously.
-        if data["due_date"] != row.due_date:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=(
-                    "Exams can't be rescheduled by dragging — edit the "
-                    "assignment kind to move the date."
-                ),
-            )
 
     if "name" in data and data["name"] is not None:
         row.name = data["name"].strip()

@@ -63,6 +63,16 @@ export interface CourseCreatePayload {
   timezone?: string;
 }
 
+export interface CourseUpdatePayload {
+  name?: string;
+  code?: string | null;
+  instructor_name?: string | null;
+  instructor_email?: string | null;
+  color?: string;
+  target_grade?: string | null;
+  timezone?: string;
+}
+
 // --- Syllabus ingestion ---
 
 export type AssignmentKind = "assignment" | "exam";
@@ -245,6 +255,14 @@ export interface OfficeHourHostCreatePayload {
   notes?: string | null;
 }
 
+export interface OfficeHourHostUpdatePayload {
+  name?: string;
+  role?: HostRole;
+  email?: string | null;
+  zoom_link?: string | null;
+  notes?: string | null;
+}
+
 export interface OfficeHour {
   id: number;
   host_id: number;
@@ -259,6 +277,14 @@ export interface OfficeHourCreatePayload {
   day_of_week: number;
   start_time: string;
   end_time: string;
+  location?: string | null;
+}
+
+export interface OfficeHourUpdatePayload {
+  host_id?: number;
+  day_of_week?: number;
+  start_time?: string;
+  end_time?: string;
   location?: string | null;
 }
 

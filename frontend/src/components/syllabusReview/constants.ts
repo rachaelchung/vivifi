@@ -6,6 +6,7 @@ import type {
   ExtractedNote,
   ExtractedOfficeHour,
   ExtractedOfficeHourHost,
+  SyllabusExtraction,
 } from "@/api/types";
 
 // SPEC uses Monday = 0, Sunday = 6.
@@ -72,4 +73,29 @@ export function emptyClassMeeting(): ExtractedClassMeeting {
 
 export function emptyNote(): ExtractedNote {
   return { heading: "", body: "" };
+}
+
+/** Blank review payload for courses set up without a syllabus upload. */
+export function emptyManualExtraction(course: {
+  name: string;
+  code: string | null;
+  instructor_name: string | null;
+  instructor_email: string | null;
+}): SyllabusExtraction {
+  return {
+    course: {
+      name: course.name,
+      code: course.code,
+      instructor_name: course.instructor_name,
+      instructor_email: course.instructor_email,
+    },
+    // SPEC default when no weights are known — user can restructure before commit.
+    grade_categories: [{ name: "Overall", weight_pct: 100, drop_lowest_n: 0 }],
+    grading_scale: DEFAULT_SCALE.map((b) => ({ ...b })),
+    assignments: [],
+    office_hour_hosts: [],
+    office_hours: [],
+    class_meetings: [],
+    notes: [],
+  };
 }

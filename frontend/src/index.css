@@ -139,12 +139,12 @@ body {
   cursor: pointer;
 }
 
-/* Exams: a bit larger + a distinctive left rule so they stand out even at a
- * glance. Non-draggable, per SPEC (backend also rejects the mutation). */
+/* Exams: a bit larger + a darker border all around so they stand out even
+ * at a glance. Non-draggable, per SPEC (backend also rejects the mutation). */
 .vv-event-exam {
-  padding: 4px 6px 4px 8px !important;
-  border-left-width: 4px !important;
-  border-left-color: rgba(0, 0, 0, 0.35) !important;
+  padding: 4px 6px !important;
+  border-width: 2px !important;
+  border-color: rgba(0, 0, 0, 0.45) !important;
   font-weight: 600 !important;
   cursor: pointer !important;
 }

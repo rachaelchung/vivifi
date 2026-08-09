@@ -391,15 +391,15 @@ Login is unified across access surfaces (web + SMS-linked phone number, when SMS
 3. Calendar week and list views (with drag-and-drop on both)
 4. `drop_lowest_n` support in category math
 5. Scenarios table for multi-item predictions
-6. Notifications / reminders ("your midterm is tomorrow" — browser push, or email, or SMS if that's built)
-7. Textbooks / required materials as a first-class entity (currently these live in `CourseNote`)
-8. Past-semester read-only browsing
-9. User-selectable themes via CSS-variable class swap
-10. Per-host filter on the Office Hour Week view
-11. Course-level image/cover upload for the Vibe customization goal
-12. Class-meeting-aware calendar (block off class times, highlight OH right after class)
-13. **SMS companion** (Twilio + intent classifier + audit table) — deliberately near the bottom: A2P 10DLC verification is real deployment friction, webhook timeout handling adds async complexity, and the feature is demo-only until compliance work is done. Consider it "aspirational" for the hackathon submission rather than promised.
-14. **Additional class-hour types** (recitations, labs, seminars, "MATLAB reci" and other course-specific sub-sessions). MVP folds everything into a single `ClassMeeting` entity, which loses the distinction between a normal lecture and, say, a required Friday MATLAB recitation. A future revision could add a `kind` (`lecture | recitation | lab | seminar | other`) to `ClassMeeting` so the calendar and future "class-meeting-aware" features can differentiate them. Deferred because the long tail of naming conventions ("reci", "PSO", "SI session", ...) makes fully-modeled taxonomy unbounded, and lumping into `ClassMeeting` is the least wrong default.
+6. Textbooks / required materials as a first-class entity (currently these live in `CourseNote`)
+7. Past-semester read-only browsing
+8. User-selectable themes via CSS-variable class swap
+9. Per-host filter on the Office Hour Week view
+10. Course-level image/cover upload for the Vibe customization goal
+11. Notifications / reminders ("your midterm is tomorrow" — browser push, or email, or SMS if that's built)
+12. **SMS companion** (Twilio + intent classifier + audit table) — deliberately near the bottom: A2P 10DLC verification is real deployment friction, webhook timeout handling adds async complexity, and the feature is demo-only until compliance work is done. Consider it "aspirational" for the hackathon submission rather than promised.
+13. **Additional class-hour types** (recitations, labs, seminars, "MATLAB reci" and other course-specific sub-sessions). MVP folds everything into a single `ClassMeeting` entity, which loses the distinction between a normal lecture and, say, a required Friday MATLAB recitation. A future revision could add a `kind` (`lecture | recitation | lab | seminar | other`) to `ClassMeeting` so the calendar and future "class-meeting-aware" features can differentiate them. Deferred because the long tail of naming conventions ("reci", "PSO", "SI session", ...) makes fully-modeled taxonomy unbounded, and lumping into `ClassMeeting` is the least wrong default.
+14. Class meeting calendar
 15. **Drag-to-reorder semester tabs.** The folder-style switcher currently renders tabs in creation order (older on the left, newer on the right) and holds that order regardless of which semester is active. Drag-to-reorder would let students group tabs by their own logic (e.g. current semester on the far left even if it wasn't created first). Requires an `order_index` column on `Semester`, a `PUT /semesters/order` endpoint that accepts an ordered list of slugs, and HTML5 drag handlers on each tab with an optimistic-update mutation.
 16. **Paired rename prompt.** Renaming an `Assignment` does **not** propagate to its linked `GradebookEntry` (and vice versa) — intentional split-model divergence. Stretch UX: when the user renames one half of a pair that still shares a `source_assignment_id` link, offer "Rename the linked gradebook entry / assignment too?" so they can keep labels in sync without losing the option to diverge. MVP keeps independent inline renames on each tab.
 

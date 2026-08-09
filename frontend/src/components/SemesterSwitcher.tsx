@@ -9,8 +9,8 @@ interface SemesterSwitcherProps {
   activeSlug: string | null;
   onSelect: (slug: string) => void;
   onDelete?: (slug: string) => void;
-  /** Called with the new name when an inline rename commits. */
-  onRename?: (slug: string, name: string) => void | Promise<unknown>;
+  /** Opens the edit-semester flow (name + dates). */
+  onEdit?: (slug: string) => void;
   /** When true, the calendar icon tab on the far right reads as selected. */
   calendarActive?: boolean;
 }
@@ -20,15 +20,12 @@ export function SemesterSwitcher({
   activeSlug,
   onSelect,
   onDelete,
-  onRename,
+  onEdit,
   calendarActive = false,
 }: SemesterSwitcherProps) {
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
-  const [renamingSlug, setRenamingSlug] = useState<string | null>(null);
-  const [renameDraft, setRenameDraft] = useState("");
   const menuRef = useRef<HTMLDivElement | null>(null);
-  const renameInputRef = useRef<HTMLInputElement | null>(null);
-  const hasMenu = !!(onDelete || onRename);
+  const hasMenu = !!(onDelete || onEdit);
 
   // Close the popover when the user clicks anywhere outside it or hits Escape.
   useEffect(() => {
@@ -51,28 +48,6 @@ export function SemesterSwitcher({
     };
   }, [menuOpen]);
 
-  useEffect(() => {
-    if (renamingSlug) {
-      renameInputRef.current?.focus();
-      renameInputRef.current?.select();
-    }
-  }, [renamingSlug]);
-
-  async function commitRename(sem: Semester) {
-    const next = renameDraft.trim();
-    setRenamingSlug(null);
-    if (!onRename || !next || next === sem.name) {
-      setRenameDraft(sem.name);
-      return;
-    }
-    await onRename(sem.slug, next);
-  }
-
-  function cancelRename(sem: Semester) {
-    setRenameDraft(sem.name);
-    setRenamingSlug(null);
-  }
-
   return (
     <div className="flex flex-wrap items-end gap-1 border-b border-border">
       {semesters.map((sem) => {
@@ -81,8 +56,7 @@ export function SemesterSwitcher({
         // current semester so you can tell which term you're looking at.
         const isActiveTab = calendarActive ? false : isSelected;
         const isMenuOpen = menuOpen === sem.slug;
-        const isRenaming = renamingSlug === sem.slug;
-        const showMenu = isActiveTab && hasMenu && !isRenaming;
+        const showMenu = isActiveTab && hasMenu;
         return (
           <div
             key={sem.slug}
@@ -92,55 +66,33 @@ export function SemesterSwitcher({
             <div
               className={cn(
                 "-mb-px flex items-center rounded-t-lg border border-transparent",
-                isActiveTab || isRenaming
+                isActiveTab
                   ? "border-border border-b-surface bg-surface text-fg"
                   : isSelected && calendarActive
                     ? "text-fg"
                     : "text-muted",
               )}
             >
-              {isRenaming ? (
-                <input
-                  ref={renameInputRef}
-                  className="min-w-[6rem] max-w-[12rem] border-0 bg-transparent px-3 py-2 text-sm font-medium outline-none"
-                  value={renameDraft}
-                  onChange={(e) => setRenameDraft(e.target.value)}
-                  onBlur={() => {
-                    void commitRename(sem);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      (e.target as HTMLInputElement).blur();
-                    } else if (e.key === "Escape") {
-                      e.preventDefault();
-                      cancelRename(sem);
-                    }
-                  }}
-                  aria-label={`Rename ${sem.name}`}
-                />
-              ) : (
-                <button
-                  onClick={() => onSelect(sem.slug)}
-                  className={cn(
-                    "py-2 text-sm font-medium transition-colors",
-                    showMenu ? "pl-4 pr-1.5" : "px-4",
-                    !isActiveTab && !(isSelected && calendarActive)
-                      ? "hover:text-fg"
-                      : "",
-                  )}
-                >
-                  <span className="flex items-center gap-2">
-                    {sem.name}
-                    {sem.is_active ? (
-                      <span
-                        aria-hidden
-                        className="inline-block h-1.5 w-1.5 rounded-full bg-accent"
-                      />
-                    ) : null}
-                  </span>
-                </button>
-              )}
+              <button
+                onClick={() => onSelect(sem.slug)}
+                className={cn(
+                  "py-2 text-sm font-medium transition-colors",
+                  showMenu ? "pl-4 pr-1.5" : "px-4",
+                  !isActiveTab && !(isSelected && calendarActive)
+                    ? "hover:text-fg"
+                    : "",
+                )}
+              >
+                <span className="flex items-center gap-2">
+                  {sem.name}
+                  {sem.is_active ? (
+                    <span
+                      aria-hidden
+                      className="inline-block h-1.5 w-1.5 rounded-full bg-accent"
+                    />
+                  ) : null}
+                </span>
+              </button>
               {showMenu ? (
                 <button
                   aria-label={`Semester options: ${sem.name}`}
@@ -162,17 +114,16 @@ export function SemesterSwitcher({
                 role="menu"
                 className="absolute right-0 top-full z-10 mt-2 w-48 rounded-lg border border-border bg-surface p-1 shadow-card"
               >
-                {onRename ? (
+                {onEdit ? (
                   <button
                     role="menuitem"
                     className="block w-full rounded px-3 py-2 text-left text-sm text-fg hover:bg-bg"
                     onClick={() => {
                       setMenuOpen(null);
-                      setRenameDraft(sem.name);
-                      setRenamingSlug(sem.slug);
+                      onEdit(sem.slug);
                     }}
                   >
-                    Rename semester
+                    Edit semester
                   </button>
                 ) : null}
                 {onDelete ? (

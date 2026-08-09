@@ -11,7 +11,9 @@ Two responsibilities live here:
    encodes every extraction rule from SPEC §Syllabus Ingestion Pipeline
    (exam-vs-assignment classification, recurring expansion, boilerplate
    filter, default-Overall fallback, English translation, verbatim
-   office-hour locations).
+   office-hour locations). Before schema validation, multi-instructor email
+   dumps are sanitized onto `office_hour_hosts` so EmailStr does not reject
+   the payload.
 """
 
 from __future__ import annotations
@@ -102,7 +104,18 @@ Rules you MUST follow:
    values in `office_hour_hosts[]`. If you name a host on a block, add them
    to the roster.
 
-7. For `notes`, **skip generic university boilerplate**: Title IX statements,
+7. **Single course-level instructor contact; roster for everyone else.**
+   `course.instructor_email` MUST be a single email address or null — never
+   a comma-separated list. `course.instructor_name` is a short display string
+   for the course card (one name, or joined like "Taylor / Koz" is fine).
+   When the syllabus lists multiple instructors / section-dependent professors:
+   - Put EVERY instructor on `office_hour_hosts[]` with role "Professor" and
+     their own email (one email per host).
+   - Set `course.instructor_email` to null (the student will fill in their
+     section's contact on the review screen).
+   - Do the same for any host `email` field: one address or null, never a list.
+
+8. For `notes`, **skip generic university boilerplate**: Title IX statements,
    generic academic integrity language, disability accommodations sections,
    drop/withdraw deadlines, and any content that would appear identically
    across most syllabi at the school. **Only include course-specific content**
@@ -120,21 +133,21 @@ Rules you MUST follow:
    - Prefer fewer high-signal notes over many verbose ones. When in doubt,
      leave a note out.
 
-8. If the syllabus does not state a grading scale, return an empty
+9. If the syllabus does not state a grading scale, return an empty
    `grading_scale` array — the frontend will fall back to a standard 10-point
    scale that the user can edit.
 
-9. Category weights should sum to 100 when the syllabus states them
-   explicitly. If they don't sum to 100 in the source, return the numbers as
-   written and let the user reconcile on the review screen.
+10. Category weights should sum to 100 when the syllabus states them
+    explicitly. If they don't sum to 100 in the source, return the numbers as
+    written and let the user reconcile on the review screen.
 
-10. All output text is in English. If the syllabus is in another language,
+11. All output text is in English. If the syllabus is in another language,
     translate values to English while preserving proper nouns, room codes,
     URLs, and course codes verbatim.
 
-11. `day_of_week` is 0-indexed with Monday = 0 and Sunday = 6.
+12. `day_of_week` is 0-indexed with Monday = 0 and Sunday = 6.
 
-12. All times (`start_time`, `end_time`) are strings in 24-hour "HH:MM"
+13. All times (`start_time`, `end_time`) are strings in 24-hour "HH:MM"
     format. Convert "2:30pm" to "14:30".
 
 Schema:
@@ -202,6 +215,14 @@ def _build_user_message(
 # suspenders for the "only JSON, please" prompt.
 _JSON_OBJECT_RE = re.compile(r"\{[\s\S]*\}")
 
+# Loose email token finder for sanitizing Claude dumps like
+# "a@x.edu, b@y.edu" before EmailStr validation.
+_EMAIL_TOKEN_RE = re.compile(
+    r"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}"
+)
+
+_NAME_SPLIT_RE = re.compile(r"\s*(?:,|/|&|\band\b)\s*", re.IGNORECASE)
+
 
 def _parse_claude_json(raw: str) -> dict[str, Any]:
     """Extract and parse the JSON object from Claude's response."""
@@ -225,6 +246,164 @@ def _parse_claude_json(raw: str) -> dict[str, Any]:
             raise SyllabusIngestError(
                 "The AI returned malformed JSON. Try uploading again."
             ) from exc
+
+
+def _emails_in(value: object) -> list[str]:
+    """Pull email-shaped tokens out of a string (order-preserving, unique)."""
+    if not isinstance(value, str) or not value.strip():
+        return []
+    seen: set[str] = set()
+    out: list[str] = []
+    for match in _EMAIL_TOKEN_RE.findall(value):
+        key = match.lower()
+        if key not in seen:
+            seen.add(key)
+            out.append(match)
+    return out
+
+
+def _single_email_or_none(value: object) -> str | None:
+    """Return value only when the whole string is exactly one email."""
+    if not isinstance(value, str):
+        return None
+    stripped = value.strip()
+    if not stripped:
+        return None
+    emails = _emails_in(stripped)
+    if len(emails) == 1 and stripped == emails[0]:
+        return emails[0]
+    return None
+
+
+def _split_instructor_names(name: object) -> list[str]:
+    """Split a display name that lists multiple people, else [name]."""
+    if not isinstance(name, str) or not name.strip():
+        return []
+    stripped = name.strip()
+    parts = [p.strip() for p in _NAME_SPLIT_RE.split(stripped) if p.strip()]
+    if len(parts) > 1:
+        return parts
+    return [stripped]
+
+
+def _host_emails(hosts: list[Any]) -> set[str]:
+    found: set[str] = set()
+    for host in hosts:
+        if isinstance(host, dict):
+            email = host.get("email")
+            if isinstance(email, str) and email.strip():
+                found.add(email.strip().lower())
+    return found
+
+
+def _ensure_professor_hosts(
+    hosts: list[dict[str, Any]],
+    emails: list[str],
+    names: list[str],
+) -> None:
+    """Append Professor hosts for emails not already on the roster."""
+    existing = _host_emails(hosts)
+    for idx, email in enumerate(emails):
+        if email.lower() in existing:
+            continue
+        if idx < len(names):
+            host_name = names[idx]
+        else:
+            host_name = email.split("@", 1)[0]
+        hosts.append(
+            {
+                "name": host_name,
+                "role": "Professor",
+                "email": email,
+                "zoom_link": None,
+            }
+        )
+        existing.add(email.lower())
+
+
+def sanitize_extraction_dict(parsed: dict[str, Any]) -> dict[str, Any]:
+    """Normalize Claude JSON that would otherwise fail EmailStr validation.
+
+    Course-level `instructor_email` and each host `email` must be a single
+    address or null. Multi-instructor dumps (comma-separated emails, etc.)
+    are moved onto `office_hour_hosts` as Professors, and the course email
+    is cleared so the student can set their section contact on review.
+    """
+    course = parsed.get("course")
+    if not isinstance(course, dict):
+        course = {}
+        parsed["course"] = course
+
+    hosts_raw = parsed.get("office_hour_hosts")
+    hosts: list[dict[str, Any]] = (
+        [h for h in hosts_raw if isinstance(h, dict)]
+        if isinstance(hosts_raw, list)
+        else []
+    )
+    parsed["office_hour_hosts"] = hosts
+
+    # --- course instructor email -------------------------------------------
+    course_email_raw = course.get("instructor_email")
+    course_emails = _emails_in(course_email_raw)
+    single = _single_email_or_none(course_email_raw)
+
+    if single is not None:
+        course["instructor_email"] = single
+    elif len(course_emails) > 1:
+        names = _split_instructor_names(course.get("instructor_name"))
+        _ensure_professor_hosts(hosts, course_emails, names)
+        course["instructor_email"] = None
+        # Keep a readable joined display name when Claude only listed one.
+        if len(names) <= 1 and len(course_emails) > 1:
+            # Prefer existing name; otherwise join local-parts.
+            if not (isinstance(course.get("instructor_name"), str) and course["instructor_name"].strip()):
+                course["instructor_name"] = " / ".join(
+                    e.split("@", 1)[0] for e in course_emails
+                )
+    else:
+        # Zero or one token that isn't a clean single email (placeholders).
+        course["instructor_email"] = None
+
+    # --- host emails (may also be comma-lists) -----------------------------
+    expanded: list[dict[str, Any]] = []
+    for host in hosts:
+        email_raw = host.get("email")
+        single_host = _single_email_or_none(email_raw)
+        if single_host is not None:
+            host["email"] = single_host
+            expanded.append(host)
+            continue
+
+        host_emails = _emails_in(email_raw)
+        if not host_emails:
+            host["email"] = None
+            expanded.append(host)
+            continue
+
+        # First email stays on this host; extras become additional Professors.
+        host["email"] = host_emails[0]
+        expanded.append(host)
+        base_name = host.get("name") if isinstance(host.get("name"), str) else ""
+        extra_names = _split_instructor_names(base_name)
+        for idx, email in enumerate(host_emails[1:], start=1):
+            if email.lower() in _host_emails(expanded):
+                continue
+            name = (
+                extra_names[idx]
+                if idx < len(extra_names)
+                else email.split("@", 1)[0]
+            )
+            expanded.append(
+                {
+                    "name": name,
+                    "role": host.get("role") or "Professor",
+                    "email": email,
+                    "zoom_link": None,
+                }
+            )
+
+    parsed["office_hour_hosts"] = expanded
+    return parsed
 
 
 def extract_syllabus(
@@ -288,7 +467,7 @@ def extract_syllabus(
     if not combined:
         raise SyllabusIngestError("The AI returned an empty response. Try again.")
 
-    parsed = _parse_claude_json(combined)
+    parsed = sanitize_extraction_dict(_parse_claude_json(combined))
 
     try:
         return SyllabusExtraction.model_validate(parsed)

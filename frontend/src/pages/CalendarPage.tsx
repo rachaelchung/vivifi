@@ -181,15 +181,12 @@ export default function CalendarPage() {
       courseSlug,
       assignmentSlug,
       completed,
-      kind,
     } = arg.event.extendedProps as {
       courseName: string;
       courseSlug: string;
       assignmentSlug: string;
       completed: boolean;
-      kind: string;
     };
-    const isExam = kind === "exam";
 
     return (
       <div
@@ -227,11 +224,6 @@ export default function CalendarPage() {
               (completed ? "line-through opacity-80" : "")
             }
           >
-            {isExam ? (
-              <span className="mr-1 text-[9px] font-semibold uppercase tracking-wider opacity-90">
-                Exam
-              </span>
-            ) : null}
             {arg.event.title}
           </div>
           <div

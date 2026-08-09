@@ -1,61 +1,73 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 import { ApiError } from "@/api/client";
-import { useCreateCourse } from "@/api/courses";
+import { useUpdateCourse } from "@/api/courses";
+import type { Course } from "@/api/types";
 import { Modal } from "@/components/Modal";
 import { COURSE_COLOR_CHOICES } from "@/lib/courseColors";
 
-interface AddCourseModalProps {
+interface EditCourseModalProps {
   open: boolean;
   onClose: () => void;
-  semesterSlug: string;
+  course: Course;
 }
 
-export function AddCourseModal({ open, onClose, semesterSlug }: AddCourseModalProps) {
-  const [name, setName] = useState("");
-  const [code, setCode] = useState("");
-  const [instructor, setInstructor] = useState("");
-  const [color, setColor] = useState<string>(COURSE_COLOR_CHOICES[0]);
+export function EditCourseModal({ open, onClose, course }: EditCourseModalProps) {
+  const [name, setName] = useState(course.name);
+  const [code, setCode] = useState(course.code ?? "");
+  const [instructor, setInstructor] = useState(course.instructor_name ?? "");
+  const [color, setColor] = useState(course.color);
   const [error, setError] = useState<string | null>(null);
-  const createCourse = useCreateCourse();
+  const updateCourse = useUpdateCourse();
 
-  function resetAndClose() {
-    setName("");
-    setCode("");
-    setInstructor("");
-    setColor(COURSE_COLOR_CHOICES[0]);
+  const colorChoices = COURSE_COLOR_CHOICES.includes(course.color)
+    ? COURSE_COLOR_CHOICES
+    : [course.color, ...COURSE_COLOR_CHOICES];
+
+  useEffect(() => {
+    if (!open) return;
+    setName(course.name);
+    setCode(course.code ?? "");
+    setInstructor(course.instructor_name ?? "");
+    setColor(course.color);
     setError(null);
-    onClose();
-  }
+  }, [open, course]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setError("Give this course a name.");
+      return;
+    }
+
     try {
-      await createCourse.mutateAsync({
-        semester_slug: semesterSlug,
-        name: name.trim(),
-        code: code.trim() || null,
-        instructor_name: instructor.trim() || null,
-        color,
-        timezone:
-          Intl.DateTimeFormat().resolvedOptions().timeZone || "America/New_York",
+      await updateCourse.mutateAsync({
+        slug: course.slug,
+        payload: {
+          name: trimmed,
+          code: code.trim() || null,
+          instructor_name: instructor.trim() || null,
+          color,
+        },
       });
-      resetAndClose();
+      onClose();
     } catch (err) {
-      setError(err instanceof ApiError ? err.detail : "Couldn't create course.");
+      setError(err instanceof ApiError ? err.detail : "Couldn't update course.");
     }
   }
 
   return (
-    <Modal open={open} onClose={resetAndClose} title="Add a course">
+    <Modal open={open} onClose={onClose} title="Edit course">
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div>
-          <label className="label" htmlFor="course-name">
+          <label className="label" htmlFor="edit-course-name">
             Course name
           </label>
           <input
-            id="course-name"
+            id="edit-course-name"
             className="input"
             placeholder="Intro to Computer Science"
             autoFocus
@@ -67,11 +79,11 @@ export function AddCourseModal({ open, onClose, semesterSlug }: AddCourseModalPr
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="label" htmlFor="course-code">
+            <label className="label" htmlFor="edit-course-code">
               Course code
             </label>
             <input
-              id="course-code"
+              id="edit-course-code"
               className="input"
               placeholder="15-113"
               value={code}
@@ -80,11 +92,11 @@ export function AddCourseModal({ open, onClose, semesterSlug }: AddCourseModalPr
             />
           </div>
           <div>
-            <label className="label" htmlFor="instructor">
+            <label className="label" htmlFor="edit-course-instructor">
               Instructor
             </label>
             <input
-              id="instructor"
+              id="edit-course-instructor"
               className="input"
               placeholder="Prof. Taylor"
               value={instructor}
@@ -96,7 +108,7 @@ export function AddCourseModal({ open, onClose, semesterSlug }: AddCourseModalPr
         <div>
           <span className="label">Accent color</span>
           <div className="flex flex-wrap gap-2">
-            {COURSE_COLOR_CHOICES.map((choice) => (
+            {colorChoices.map((choice) => (
               <button
                 type="button"
                 key={choice}
@@ -115,15 +127,15 @@ export function AddCourseModal({ open, onClose, semesterSlug }: AddCourseModalPr
         </div>
         {error ? <p className="text-sm text-danger">{error}</p> : null}
         <div className="flex items-center justify-end gap-3 pt-2">
-          <button type="button" className="btn-ghost" onClick={resetAndClose}>
+          <button type="button" className="btn-ghost" onClick={onClose}>
             Cancel
           </button>
           <button
             type="submit"
             className="btn-primary"
-            disabled={createCourse.isPending || !name.trim()}
+            disabled={updateCourse.isPending || !name.trim()}
           >
-            {createCourse.isPending ? "Adding…" : "Add course"}
+            {updateCourse.isPending ? "Saving…" : "Save"}
           </button>
         </div>
       </form>

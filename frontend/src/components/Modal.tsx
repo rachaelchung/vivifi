@@ -1,13 +1,28 @@
 import { useEffect, type ReactNode } from "react";
 
+type ModalSize = "md" | "lg" | "xl";
+
+const SIZE_CLASS: Record<ModalSize, string> = {
+  md: "max-w-md",
+  lg: "max-w-2xl",
+  xl: "max-w-4xl",
+};
+
 interface ModalProps {
   open: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
+  size?: ModalSize;
 }
 
-export function Modal({ open, onClose, title, children }: ModalProps) {
+export function Modal({
+  open,
+  onClose,
+  title,
+  children,
+  size = "md",
+}: ModalProps) {
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
@@ -32,8 +47,8 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
         onClick={onClose}
         style={{ backgroundColor: "rgba(27, 27, 31, 0.3)" }}
       />
-      <div className="relative w-full max-w-md">
-        <div className="card p-6">
+      <div className={`relative w-full ${SIZE_CLASS[size]}`}>
+        <div className="card max-h-[85vh] overflow-y-auto p-6">
           <div className="flex items-start justify-between">
             <h2 id="modal-title" className="text-xl font-semibold tracking-tight">
               {title}

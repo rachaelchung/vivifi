@@ -39,7 +39,7 @@ export function CourseMetaSection({
   return (
     <SectionCard
       title="Course"
-      description="What this course is called and who's teaching it."
+      description="Display name for the course card. If the syllabus has multiple or section-dependent instructors, list everyone under Instructors & TAs, then put your section's contact here."
     >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
@@ -93,6 +93,7 @@ export function CourseMetaSection({
             className="input"
             type="email"
             value={value.instructor_email ?? ""}
+            placeholder="Your section's professor"
             onChange={(e) =>
               onChange({
                 ...value,
@@ -100,6 +101,9 @@ export function CourseMetaSection({
               })
             }
           />
+          <p className="hint mt-1">
+            One email only. Co-instructors belong on the roster below.
+          </p>
         </div>
       </div>
     </SectionCard>
@@ -401,7 +405,7 @@ export function HostsSection({
   return (
     <SectionCard
       title="Instructors & TAs"
-      description="Every office-hour block is owned by exactly one host. The Zoom field here is only for hosts whose office hours are always on the same personal room — leave it blank if they use different rooms per block or hold hours in person."
+      description="Full roster: professors (including section-dependent co-instructors), TAs, and LAs. Every office-hour block is owned by exactly one host. Personal Zoom is only for hosts who always use the same room — leave it blank otherwise."
     >
       {value.map((h, idx) => (
         <RowCard

@@ -7,6 +7,7 @@ import { AddCourseModal } from "@/components/AddCourseModal";
 import { AddCourseTile } from "@/components/AddCourseTile";
 import { BrandMark } from "@/components/BrandMark";
 import { CourseCard } from "@/components/CourseCard";
+import { EditSemesterModal } from "@/components/EditSemesterModal";
 import { SemesterSwitcher } from "@/components/SemesterSwitcher";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -16,6 +17,7 @@ export default function SemesterHubPage() {
   const { data: semesters, isLoading: semestersLoading } = useSemesters();
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [addCourseOpen, setAddCourseOpen] = useState(false);
+  const [editSemesterOpen, setEditSemesterOpen] = useState(false);
 
   const updateSemester = useUpdateSemester();
   const deleteSemester = useDeleteSemester();
@@ -63,8 +65,9 @@ export default function SemesterHubPage() {
     if (selectedSlug === slug) setSelectedSlug(null);
   }
 
-  function handleRenameSemester(slug: string, name: string) {
-    updateSemester.mutate({ slug, payload: { name } });
+  function handleEditSemester(slug: string) {
+    setSelectedSlug(slug);
+    setEditSemesterOpen(true);
   }
 
   async function handleDeleteCourse(slug: string) {
@@ -104,7 +107,7 @@ export default function SemesterHubPage() {
               semesters={semesters}
               activeSlug={selectedSlug}
               onSelect={handleSelectSemester}
-              onRename={handleRenameSemester}
+              onEdit={handleEditSemester}
               onDelete={handleDeleteSemester}
             />
 
@@ -116,10 +119,16 @@ export default function SemesterHubPage() {
                       {selectedSemester.name}
                     </h1>
                     <p className="mt-1 text-sm text-muted">
-                      {formatDateRange(
-                        selectedSemester.start_date,
-                        selectedSemester.end_date,
-                      )}
+                      <button
+                        type="button"
+                        className="hover:text-fg hover:underline"
+                        onClick={() => setEditSemesterOpen(true)}
+                      >
+                        {formatDateRange(
+                          selectedSemester.start_date,
+                          selectedSemester.end_date,
+                        )}
+                      </button>
                     </p>
                   </div>
                   {hasCourses ? (
@@ -162,6 +171,14 @@ export default function SemesterHubPage() {
           open={addCourseOpen}
           onClose={() => setAddCourseOpen(false)}
           semesterSlug={selectedSlug}
+        />
+      ) : null}
+
+      {selectedSemester ? (
+        <EditSemesterModal
+          open={editSemesterOpen}
+          onClose={() => setEditSemesterOpen(false)}
+          semester={selectedSemester}
         />
       ) : null}
     </div>

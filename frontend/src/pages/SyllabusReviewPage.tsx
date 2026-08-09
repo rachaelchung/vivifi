@@ -24,6 +24,8 @@ import { useAuth } from "@/contexts/AuthContext";
 
 interface LocationState {
   response?: SyllabusExtractResponse;
+  /** True when the user skipped syllabus upload and opened an empty review. */
+  manual?: boolean;
 }
 
 export default function SyllabusReviewPage() {
@@ -35,9 +37,11 @@ export default function SyllabusReviewPage() {
   const state = (location.state as LocationState | null) ?? null;
   const { data: course } = useCourse(slug ?? null);
   const commit = useCommitSyllabus(slug ?? "");
+  const isManual = state?.manual === true;
 
   // Local editable copy of the extraction. Seed with the response from the
-  // upload flow. If no state is present (e.g. hard refresh), redirect back.
+  // upload flow (or the empty manual payload). If no state is present
+  // (e.g. hard refresh), redirect back.
   const [extraction, setExtraction] = useState<SyllabusExtraction | null>(
     state?.response?.extraction
       ? seedDefaults(state.response.extraction)
@@ -126,12 +130,12 @@ export default function SyllabusReviewPage() {
             Step 2
           </p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight">
-            Review the extraction.
+            {isManual ? "Set up this course." : "Review the extraction."}
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-muted">
-            Edit anything Claude got wrong. Nothing is saved until you hit
-            commit. If a whole section looks off, use the delete buttons and
-            add rows manually.
+            {isManual
+              ? "Add categories, a grading scale, assignments, hosts, and anything else you want tracked. Nothing is saved until you hit commit."
+              : "Edit anything Claude got wrong. Nothing is saved until you hit commit. If a whole section looks off, use the delete buttons and add rows manually."}
           </p>
         </div>
 
@@ -153,11 +157,21 @@ export default function SyllabusReviewPage() {
           </Banner>
         ) : null}
 
-        {hasNoAssignments && !looksIncomplete ? (
+        {hasNoAssignments && !looksIncomplete && !isManual ? (
           <Banner tone="info">
             <p className="text-sm">
               No dated assignments were found in this syllabus. You can commit
               anyway and add them as they're posted.
+            </p>
+          </Banner>
+        ) : null}
+
+        {isManual ? (
+          <Banner tone="info">
+            <p className="text-sm">
+              Starting from an empty shell with one <span className="font-medium">Overall</span>{" "}
+              category at 100% and a standard grading scale. Restructure freely —
+              you can add more later from the live tabs after commit.
             </p>
           </Banner>
         ) : null}
@@ -249,7 +263,11 @@ export default function SyllabusReviewPage() {
               onClick={handleCommit}
               disabled={!canCommit || commit.isPending}
             >
-              {commit.isPending ? "Committing…" : "Commit syllabus"}
+              {commit.isPending
+                ? "Committing…"
+                : isManual
+                  ? "Save course"
+                  : "Commit syllabus"}
             </button>
           </div>
         </div>
