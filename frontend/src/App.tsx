@@ -1,9 +1,11 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import { useAuth } from "@/contexts/AuthContext";
+import AuthCallbackPage from "@/pages/AuthCallbackPage";
 import CalendarPage from "@/pages/CalendarPage";
 import CourseDetailPage from "@/pages/CourseDetailPage";
 import LoginPage from "@/pages/LoginPage";
+import OfficeHoursPage from "@/pages/OfficeHoursPage";
 import RegisterPage from "@/pages/RegisterPage";
 import SemesterSetupPage from "@/pages/SemesterSetupPage";
 import SemesterHubPage from "@/pages/SemesterHubPage";
@@ -50,6 +52,7 @@ export default function App() {
           </RedirectIfAuthed>
         }
       />
+      <Route path="/auth/callback" element={<AuthCallbackPage />} />
       <Route
         path="/semester-setup"
         element={
@@ -79,6 +82,14 @@ export default function App() {
         element={
           <RequireAuth>
             <CalendarPage />
+          </RequireAuth>
+        }
+      />
+      <Route
+        path="/office-hours"
+        element={
+          <RequireAuth>
+            <OfficeHoursPage />
           </RequireAuth>
         }
       />

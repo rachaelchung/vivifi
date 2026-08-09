@@ -127,6 +127,23 @@ body {
   line-height: 1.25;
 }
 
+@media (max-width: 640px) {
+  .fc .fc-daygrid-event {
+    font-size: 10px;
+    padding: 2px 3px;
+  }
+
+  .fc .fc-col-header-cell-cushion {
+    font-size: 10px;
+    padding: 6px 2px;
+  }
+
+  .fc .fc-daygrid-day-number {
+    font-size: 11px;
+    padding: 4px;
+  }
+}
+
 .fc .fc-daygrid-event .fc-event-main {
   color: inherit;
 }
@@ -161,3 +178,18 @@ body {
   cursor: pointer !important;
   filter: grayscale(0.35);
 }
+
+/* List view — match Vivifi tokens (FullCalendar defaults are too loud). */
+.fc .fc-list {
+  border-color: var(--color-border);
+}
+
+.fc .fc-list-day-cushion {
+  background: var(--color-bg);
+}
+
+.fc .fc-list-event:hover td {
+  background: color-mix(in oklab, var(--color-accent) 8%, transparent);
+}
+
+

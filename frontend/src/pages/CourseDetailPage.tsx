@@ -53,21 +53,23 @@ export default function CourseDetailPage() {
       style={course ? { ["--color-accent" as string]: course.color } : undefined}
     >
       <header className="border-b border-border">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
-          <div className="flex items-center gap-3">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <BrandMark />
-            <span className="text-muted">/</span>
+            <span className="hidden text-muted sm:inline">/</span>
             <Link
               to="/"
-              className="text-sm font-medium text-muted hover:text-fg"
+              className="hidden text-sm font-medium text-muted hover:text-fg sm:inline"
             >
               Semester
             </Link>
           </div>
-          <div className="flex items-center gap-4 text-sm">
+          <div className="flex min-w-0 items-center gap-2 text-sm sm:gap-4">
             {user ? (
               <>
-                <span className="text-muted">{user.email}</span>
+                <span className="hidden truncate text-muted sm:inline">
+                  {user.email}
+                </span>
                 <button className="btn-ghost" onClick={signOut} type="button">
                   Sign out
                 </button>
@@ -77,19 +79,22 @@ export default function CourseDetailPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 pb-24 pt-8">
+      <main className="mx-auto max-w-5xl px-4 pb-24 pt-6 sm:px-6 sm:pt-8">
         {isLoading ? (
           <p className="text-sm text-muted">Loading course…</p>
         ) : error || !course ? (
           <div className="card p-8 text-center">
-            <p className="text-sm text-muted">Couldn't load that course.</p>
+            <p className="text-sm text-muted">
+              Couldn't load that course. It may have been deleted, or the server
+              is unreachable.
+            </p>
             <Link to="/" className="mt-4 inline-block text-sm text-accent hover:underline">
               Back to semester
             </Link>
           </div>
         ) : (
           <>
-            <div className="group/course mb-6 flex items-start gap-4">
+            <div className="group/course mb-6 flex items-start gap-3 sm:gap-4">
               <span
                 aria-hidden
                 className="mt-1.5 h-6 w-6 flex-shrink-0 rounded-md"
@@ -102,7 +107,7 @@ export default function CourseDetailPage() {
                   </p>
                 ) : null}
                 <div className="flex items-center gap-2">
-                  <h1 className="text-3xl font-semibold tracking-tight">
+                  <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
                     {course.name}
                   </h1>
                   <button

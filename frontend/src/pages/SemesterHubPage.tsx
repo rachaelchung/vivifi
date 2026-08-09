@@ -8,6 +8,7 @@ import { AddCourseTile } from "@/components/AddCourseTile";
 import { BrandMark } from "@/components/BrandMark";
 import { CourseCard } from "@/components/CourseCard";
 import { EditSemesterModal } from "@/components/EditSemesterModal";
+import { EmptyState } from "@/components/EmptyState";
 import { SemesterSwitcher } from "@/components/SemesterSwitcher";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -83,12 +84,14 @@ export default function SemesterHubPage() {
   return (
     <div className="min-h-screen">
       <header className="border-b border-border">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5">
           <BrandMark />
-          <div className="flex items-center gap-4 text-sm">
+          <div className="flex min-w-0 items-center gap-2 text-sm sm:gap-4">
             {user ? (
               <>
-                <span className="text-muted">{user.email}</span>
+                <span className="hidden truncate text-muted sm:inline">
+                  {user.email}
+                </span>
                 <button className="btn-ghost" onClick={signOut} type="button">
                   Sign out
                 </button>
@@ -98,7 +101,7 @@ export default function SemesterHubPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 pb-24 pt-8">
+      <main className="mx-auto max-w-6xl px-4 pb-24 pt-6 sm:px-6 sm:pt-8">
         {semestersLoading || !semesters ? (
           <p className="text-sm text-muted">Loading…</p>
         ) : (
@@ -113,9 +116,9 @@ export default function SemesterHubPage() {
 
             <section className="mt-8">
               {selectedSemester ? (
-                <div className="mb-6 flex items-baseline justify-between">
-                  <div>
-                    <h1 className="text-3xl font-semibold tracking-tight">
+                <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-baseline sm:justify-between">
+                  <div className="min-w-0">
+                    <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
                       {selectedSemester.name}
                     </h1>
                     <p className="mt-1 text-sm text-muted">
@@ -133,7 +136,7 @@ export default function SemesterHubPage() {
                   </div>
                   {hasCourses ? (
                     <button
-                      className="btn-secondary"
+                      className="btn-secondary self-start"
                       onClick={() => setAddCourseOpen(true)}
                       type="button"
                     >
@@ -157,9 +160,19 @@ export default function SemesterHubPage() {
                   <AddCourseTile onClick={() => setAddCourseOpen(true)} />
                 </div>
               ) : selectedSemester ? (
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  <AddCourseTile onClick={() => setAddCourseOpen(true)} emphasis />
-                </div>
+                <EmptyState
+                  title="No courses yet"
+                  description="Add your first course, then upload its syllabus. Vivifi extracts grades, assignments, instructors, and notes so you can review before anything is saved."
+                  action={
+                    <button
+                      type="button"
+                      className="btn-primary"
+                      onClick={() => setAddCourseOpen(true)}
+                    >
+                      + Add course
+                    </button>
+                  }
+                />
               ) : null}
             </section>
           </>

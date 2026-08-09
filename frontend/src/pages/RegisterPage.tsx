@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { register } from "@/api/auth";
 import { ApiError } from "@/api/client";
 import { AuthShell } from "@/components/AuthShell";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function RegisterPage() {
@@ -49,6 +50,7 @@ export default function RegisterPage() {
         </>
       }
     >
+      <GoogleSignInButton />
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div>
           <label className="label" htmlFor="name">

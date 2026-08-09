@@ -41,7 +41,7 @@ vire/
 │   │   │   ├── note.py                   CourseNote
 │   │   │   └── predict.py                CurrentGrade + PredictRequest/Response
 │   │   ├── routers/
-│   │   │   ├── auth.py                   /auth/register, /login, /me
+│   │   │   ├── auth.py                   /auth/register, /login, /me, Google OAuth
 │   │   │   ├── semesters.py              /semesters CRUD
 │   │   │   ├── courses.py                /courses CRUD (+ GET /courses/{slug})
 │   │   │   ├── syllabus.py               /courses/{slug}/syllabus, /syllabus/text, /syllabus/commit
@@ -105,6 +105,7 @@ vire/
 │       │       └── NotesTab.tsx          conditional notes list + manual add
 │       └── pages/
 │           ├── LoginPage.tsx, RegisterPage.tsx
+│           ├── AuthCallbackPage.tsx      Google OAuth token handoff
 │           ├── SemesterSetupPage.tsx     first-run + "+ New semester" form
 │           ├── SemesterHubPage.tsx       main dashboard (switcher + course grid + Calendar link)
 │           ├── CourseDetailPage.tsx      per-course landing (upload UI or tabbed live view)
@@ -114,6 +115,7 @@ vire/
 ├── .github/workflows/
 │   └── deploy-frontend.yml               GitHub Pages build + deploy
 ├── SPEC.md
+├── DEMO.md                               demo script + Google OAuth env checklist
 ├── README.md
 └── .gitignore
 ```
@@ -186,15 +188,24 @@ That's what fixes the earlier problems where "am I on track for an A?" returned 
 
 `CourseCard` on the Semester Hub now shows the real current grade + letter for committed courses via `useCurrentGrade`.
 
+### Milestone 4 — Polish
+
+**Google OAuth.** `GET /auth/google` + `/auth/google/callback` via Authlib. Unconfigured servers return 503 and hide the button (`GET /auth/providers`). Existing password accounts with the same verified Google email are auto-linked (`google_sub`). The SPA lands on `/auth/callback?token=…`, stores the JWT, and hydrates `/auth/me`.
+
+**Empty / error / mobile.** Shared `EmptyState` on the hub, assignments, and calendar; clearer offline/`ApiError` copy; headers collapse email on small screens; course tabs scroll horizontally; calendar densifies under 640px.
+
+**Demo packaging.** See [DEMO.md](./DEMO.md) for the click-through script and the exact Google Cloud / Render / GitHub Pages env checklist.
+
 ## What you have right now
 
-- ✅ **A working auth-gated web app.** Register, log in, sign out. Token in localStorage; `/auth/me` hydrates on refresh.
+- ✅ **A working auth-gated web app.** Register, log in, sign out (email/password **or Google**). Token in localStorage; `/auth/me` hydrates on refresh.
 - ✅ **Semester management.** Create, switch, delete semesters; folder-tab UI with a persistent "+ New semester" affordance and creation-order stability.
 - ✅ **Course CRUD.** Add courses to the active semester, pick an accent color, delete when done. Course cards link to their detail page and show a live grade badge once committed.
 - ✅ **The full syllabus ingestion pipeline.** PDF upload or paste-text → Claude extraction → editable review → atomic commit that creates paired `Assignment` + `GradebookEntry` rows.
 - ✅ **Guardrails.** 10 MB upload cap, PDF-only, empty-body guard; commit validates weights sum to 100 and rejects unknown host references; re-commit returns 409; default 10-point grading scale filled when the payload has none.
 - ✅ **Grade math + live views.** Per-category grade math with proper extra-credit and hidden-entry handling; Gradebook / Assignments / Instructors / (conditional) Notes tabs; natural-language prediction; drag-drop Calendar month view.
 - ✅ **Inline edit agency.** Hover/focus pencil on assignment and gradebook names; gradebook also edits points earned and points possible in place (no modal).
+- ✅ **Polish.** Google OAuth, empty/error states, mobile pass, demo script.
 
 ## Stretch goals
 
@@ -237,5 +248,5 @@ Dev server at http://localhost:5173.
 
 ## Deployment
 
-- **Backend:** Render (see `backend/render.yaml`). Uses a Neon serverless Postgres. Set `DATABASE_URL`, `JWT_SECRET`, `ANTHROPIC_API_KEY`, and `CORS_ORIGINS` as Render secrets.
-- **Frontend:** GitHub Pages via `.github/workflows/deploy-frontend.yml`. Set the `VITE_API_BASE_URL` repo variable to your Render URL.
+- **Backend:** Render (see `backend/render.yaml`). Uses a Neon serverless Postgres. Set `DATABASE_URL`, `JWT_SECRET`, `ANTHROPIC_API_KEY`, and `CORS_ORIGINS` as Render secrets. For Google sign-in also set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `BACKEND_PUBLIC_URL`, and `FRONTEND_URL` — details in [DEMO.md](./DEMO.md).
+- **Frontend:** GitHub Pages via `.github/workflows/deploy-frontend.yml`. Set the `VITE_API_BASE_URL` repo variable to your Render URL (no Google secrets on the frontend).

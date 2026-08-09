@@ -115,6 +115,48 @@ class TestCategoryEarned:
         ]
         assert compute_category_earned(entries) == pytest.approx(0.90)
 
+    def test_drop_lowest_n_excludes_worst_ratios(self):
+        # Scores: 50%, 80%, 100%. Drop lowest 1 → mean of 0.8 and 1.0 = 0.9.
+        entries = [
+            _entry(1, 1, 5, 10),
+            _entry(2, 1, 8, 10),
+            _entry(3, 1, 10, 10),
+        ]
+        assert compute_category_earned(entries, drop_lowest_n=1) == pytest.approx(0.9)
+
+    def test_drop_lowest_n_zero_is_noop(self):
+        entries = [_entry(1, 1, 5, 10), _entry(2, 1, 10, 10)]
+        assert compute_category_earned(entries, drop_lowest_n=0) == pytest.approx(0.75)
+
+    def test_drop_lowest_does_not_drop_extra_credit(self):
+        # Normals 50% and 100% (pp=100); drop the 50%. Pure EC +5 uses
+        # pre-drop typical_pp=100 → base 1.0 + 0.05 = 1.05.
+        entries = [
+            _entry(1, 1, 50, 100),
+            _entry(2, 1, 100, 100),
+            _entry(3, 1, 5, 0),
+        ]
+        assert compute_category_earned(entries, drop_lowest_n=1) == pytest.approx(1.05)
+
+    def test_drop_all_graded_normals_leaves_only_ec(self):
+        # Drop the only normal; EC +5 with typical_pp from that normal (100).
+        entries = [_entry(1, 1, 50, 100), _entry(2, 1, 5, 0)]
+        assert compute_category_earned(entries, drop_lowest_n=1) == pytest.approx(0.05)
+
+    def test_drop_all_graded_with_no_ec_returns_none(self):
+        entries = [_entry(1, 1, 5, 10)]
+        assert compute_category_earned(entries, drop_lowest_n=1) is None
+
+    def test_current_grade_respects_category_drop_lowest(self):
+        hw = CategoryInput(id=1, name="Homework", weight_pct=100, drop_lowest_n=1)
+        entries = [
+            _entry(1, 1, 5, 10),
+            _entry(2, 1, 8, 10),
+            _entry(3, 1, 10, 10),
+        ]
+        result = compute_current_grade(entries, [hw], STANDARD_BANDS)
+        assert result.percentage == pytest.approx(90.0)
+
     def test_pure_extra_credit_only_no_normal_falls_back(self):
         # No normal entries — only a 2-point EC. typical_pp falls back to 100.
         # base = 0, ec_bonus = 2/100 = 0.02. earned_c = 0.02.

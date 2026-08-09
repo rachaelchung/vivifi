@@ -1,6 +1,9 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 const TOKEN_KEY = "vivifi.token";
 
+/** Public API origin (no trailing slash). Used for full-page OAuth redirects. */
+export const apiBaseUrl = API_BASE_URL.replace(/\/$/, "");
+
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
@@ -41,11 +44,19 @@ export async function apiRequest<T>(
     if (token) headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${apiBaseUrl}${path}`, {
+      method,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  } catch {
+    throw new ApiError(
+      0,
+      "Couldn't reach the server. Check your connection and try again.",
+    );
+  }
 
   return finalizeResponse<T>(response);
 }
@@ -67,11 +78,19 @@ export async function apiUpload<T>(
     if (token) headers["Authorization"] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method: "POST",
-    headers,
-    body: form,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${apiBaseUrl}${path}`, {
+      method: "POST",
+      headers,
+      body: form,
+    });
+  } catch {
+    throw new ApiError(
+      0,
+      "Couldn't reach the server. Check your connection and try again.",
+    );
+  }
 
   return finalizeResponse<T>(response);
 }

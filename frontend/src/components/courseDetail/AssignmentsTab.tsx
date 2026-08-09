@@ -7,6 +7,7 @@ import {
   useDeleteAssignment,
   useUpdateAssignment,
 } from "@/api/liveViews";
+import { EmptyState } from "@/components/EmptyState";
 import { InlineEditableText } from "@/components/InlineEditableText";
 
 interface AssignmentsTabProps {
@@ -44,7 +45,9 @@ export function AssignmentsTab({ courseSlug, timezone }: AssignmentsTabProps) {
   }
   if (q.error) {
     return (
-      <p className="text-sm text-danger">Couldn't load assignments.</p>
+      <p className="text-sm text-danger">
+        Couldn't load assignments. Refresh to try again.
+      </p>
     );
   }
 
@@ -52,11 +55,11 @@ export function AssignmentsTab({ courseSlug, timezone }: AssignmentsTabProps) {
 
   return (
     <section>
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-xl font-semibold tracking-tight">Assignments</h2>
         <button
           type="button"
-          className="btn-secondary text-sm"
+          className="btn-secondary self-start text-sm"
           onClick={() => setShowAdd(true)}
         >
           + Add assignment
@@ -64,10 +67,19 @@ export function AssignmentsTab({ courseSlug, timezone }: AssignmentsTabProps) {
       </div>
 
       {empty ? (
-        <p className="text-sm text-muted">
-          Nothing on your task list yet — add an assignment or exam manually,
-          or upload your syllabus and Vivifi will fill this in.
-        </p>
+        <EmptyState
+          title="Nothing due yet"
+          description="Add an assignment or exam manually, or upload your syllabus and Vivifi will fill this list in for you."
+          action={
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => setShowAdd(true)}
+            >
+              + Add assignment
+            </button>
+          }
+        />
       ) : (
         <div className="space-y-2">
           {sorted.map((a, i) => (
@@ -101,11 +113,11 @@ function TodayMarker() {
       aria-label="Today"
       className="flex items-center gap-2.5 py-0.5"
     >
-      <div className="h-px flex-1 bg-accent/35" />
+      <div className="h-px flex-1 bg-border" />
       <span className="font-num text-[10px] font-medium uppercase tracking-[0.14em] text-accent">
         Today
       </span>
-      <div className="h-px flex-1 bg-accent/35" />
+      <div className="h-px flex-1 bg-border" />
     </div>
   );
 }

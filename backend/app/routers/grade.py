@@ -94,7 +94,12 @@ def _load_grade_state(
         for e in entries_orm
     ]
     cats = [
-        gm.CategoryInput(id=c.id, name=c.name, weight_pct=c.weight_pct)
+        gm.CategoryInput(
+            id=c.id,
+            name=c.name,
+            weight_pct=c.weight_pct,
+            drop_lowest_n=c.drop_lowest_n,
+        )
         for c in cats_orm
     ]
     bands = [gm.ScaleBand(letter=b.letter, min_pct=b.min_pct) for b in bands_orm]

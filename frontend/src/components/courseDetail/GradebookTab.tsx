@@ -258,6 +258,9 @@ function CategoryBlock({
         {category ? (
           <span className="font-num text-xs text-muted">
             {category.weight_pct}%
+            {category.drop_lowest_n > 0
+              ? ` · drops lowest ${category.drop_lowest_n}`
+              : ""}
           </span>
         ) : (
           <span className="text-xs text-danger">

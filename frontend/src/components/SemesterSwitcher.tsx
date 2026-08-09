@@ -13,6 +13,8 @@ interface SemesterSwitcherProps {
   onEdit?: (slug: string) => void;
   /** When true, the calendar icon tab on the far right reads as selected. */
   calendarActive?: boolean;
+  /** When true, the office-hours icon tab reads as selected. */
+  officeHoursActive?: boolean;
 }
 
 export function SemesterSwitcher({
@@ -22,7 +24,9 @@ export function SemesterSwitcher({
   onDelete,
   onEdit,
   calendarActive = false,
+  officeHoursActive = false,
 }: SemesterSwitcherProps) {
+  const toolActive = calendarActive || officeHoursActive;
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const hasMenu = !!(onDelete || onEdit);
@@ -52,9 +56,9 @@ export function SemesterSwitcher({
     <div className="flex flex-wrap items-end gap-1 border-b border-border">
       {semesters.map((sem) => {
         const isSelected = sem.slug === activeSlug;
-        // On the calendar view the icon tab is "active"; still mark the
+        // On calendar / office-hours the icon tab is "active"; still mark the
         // current semester so you can tell which term you're looking at.
-        const isActiveTab = calendarActive ? false : isSelected;
+        const isActiveTab = toolActive ? false : isSelected;
         const isMenuOpen = menuOpen === sem.slug;
         const showMenu = isActiveTab && hasMenu;
         return (
@@ -68,7 +72,7 @@ export function SemesterSwitcher({
                 "-mb-px flex items-center rounded-t-lg border border-transparent",
                 isActiveTab
                   ? "border-border border-b-surface bg-surface text-fg"
-                  : isSelected && calendarActive
+                  : isSelected && toolActive
                     ? "text-fg"
                     : "text-muted",
               )}
@@ -150,19 +154,34 @@ export function SemesterSwitcher({
         + New semester
       </Link>
 
-      <Link
-        to="/calendar"
-        aria-label="Calendar"
-        title="Calendar"
-        className={cn(
-          "ml-auto -mb-px inline-flex items-center justify-center rounded-t-lg border border-transparent px-3 py-2 transition-colors",
-          calendarActive
-            ? "border-border border-b-surface bg-surface text-fg"
-            : "text-muted hover:text-fg",
-        )}
-      >
-        <CalendarIcon />
-      </Link>
+      <div className="ml-auto flex items-end gap-0.5">
+        <Link
+          to="/office-hours"
+          aria-label="Office hours"
+          title="Office hours"
+          className={cn(
+            "-mb-px inline-flex items-center justify-center rounded-t-lg border border-transparent px-3 py-2 transition-colors",
+            officeHoursActive
+              ? "border-border border-b-surface bg-surface text-fg"
+              : "text-muted hover:text-fg",
+          )}
+        >
+          <OfficeHoursIcon />
+        </Link>
+        <Link
+          to="/calendar"
+          aria-label="Calendar"
+          title="Calendar"
+          className={cn(
+            "-mb-px inline-flex items-center justify-center rounded-t-lg border border-transparent px-3 py-2 transition-colors",
+            calendarActive
+              ? "border-border border-b-surface bg-surface text-fg"
+              : "text-muted hover:text-fg",
+          )}
+        >
+          <CalendarIcon />
+        </Link>
+      </div>
     </div>
   );
 }
@@ -202,6 +221,25 @@ function CalendarIcon() {
     >
       <rect x="3" y="4" width="18" height="18" rx="2" />
       <path d="M16 2v4M8 2v4M3 10h18" />
+    </svg>
+  );
+}
+
+function OfficeHoursIcon() {
+  return (
+    <svg
+      aria-hidden
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
     </svg>
   );
 }

@@ -4,7 +4,7 @@ This app is called "Vivifi". It turns a static syllabus into a live view of your
 
 ## Overview
 
-**The pitch:** Your syllabus is a static document — sometimes still a piece of paper handed out in week one. But classes aren't static. Profs update dates, adjust weightings, add readings, cancel classes. The document doesn't move. In a digital age, that gap feels absurd. Introducing Vivifi: a syllabus visualizer that turns your syllabus into a live view of the course. Watch your grade in real time. See what's coming up. Know who your TAs are and when they hold office hours. Pick up on the notes your prof buried on page 4. Move an assignment when a deadline shifts. Text Viv when you get a grade back and let it update itself. Your syllabus, alive.
+**The pitch:** Your syllabus is a static document — sometimes still a piece of paper handed out in week one. But classes aren't static. Profs update dates, adjust weightings, add readings, cancel classes. The document doesn't move. In a digital age, that gap feels absurd. Introducing Vivifi: a syllabus visualizer that turns your syllabus into a live view of the course. Watch your grade in real time. See what's coming up. Know who your TAs are and when they hold office hours. Pick up on the notes your prof buried on page 4. Move an assignment when a deadline shifts. Enter a grade when you get one back and watch the math update. Your syllabus, alive.
 
 ## Positioning
 
@@ -20,10 +20,9 @@ The differentiator: **the syllabus is the primary interface.** Grades, calendar,
 ## Core Features
 
 - **Live Syllabus** — Upload a PDF syllabus once at the start of the term; Claude extracts course info, grade categories with weights, the grading scale, assignments and exams with due dates, instructors and their office hours, class meeting times, and any course-specific notes worth surfacing. You review, edit, and confirm before anything commits.
-- **Live Gradebook** — Weighted grade math across categories (e.g. Homework 20%, Midterm 25%, Final 30%). Auto-populated from your syllabus assignments, plus room for manual entries (attendance, participation, extra credit). A dedicated query box answers "what do I need on the final to get an A?" with a number, not a chat.
+- **Live Gradebook** — Weighted grade math across categories (e.g. Homework 20%, Midterm 25%, Final 30%), including `drop_lowest_n` when the syllabus says so. Auto-populated from your syllabus assignments, plus room for manual entries (attendance, participation, extra credit). A dedicated query box answers "what do I need on the final to get an A?" with a number, not a chat.
 - **Assignment + Exam Tracker** — A task-focused view separate from the gradebook: what's due, when, whether you've done it. Drag-and-drop on any calendar view reschedules an assignment; exams render distinctively and are non-draggable (profs set them). Marking an assignment "done" is fully independent of entering its grade.
-- **Instructors & Office Hours** — Each prof, TA, and learning assistant is a first-class entity with their own hours, email, and Zoom link. Filter the weekly grid by host, one click to email a TA.
-- **Text Viv** — Text Viv in natural language to update a grade, ask what you're sitting at, add an assignment, or mark one done. Ambiguous messages get a clarifying reply, never a silent write.
+- **Instructors & Office Hours** — Each prof, TA, and learning assistant is a first-class entity with their own hours, email, and Zoom link. Per-course grid on the Instructors tab; consolidated **Office Hour Week** across all courses, colored by course and filterable by host, with a live now-line.
 
 ## Grade Calculator
 
@@ -39,7 +38,7 @@ The AI never writes to your grades from the prediction flow. It only reads your 
 
 ## Assignment Tracker
 
-Add your courses for the semester, upload each syllabus, and forget the rest. Every assignment stores where it came from (`source: syllabus | manual | sms`) and what kind it is (`kind: assignment | exam`). Manual add and override are always available. Drag-and-drop on any calendar view reschedules an assignment's due date; **exams are non-draggable by design** — students shouldn't casually reschedule a prof-set test, and if it truly needs to move (a prof announces a delay), the user can edit it via the form.
+Add your courses for the semester, upload each syllabus, and forget the rest. Every assignment stores where it came from (`source: syllabus | manual`) and what kind it is (`kind: assignment | exam`). Manual add and override are always available. Drag-and-drop on any calendar view reschedules an assignment's due date; **exams are non-draggable by design** — students shouldn't casually reschedule a prof-set test, and if it truly needs to move (a prof announces a delay), the user can edit it via the form.
 
 The Assignments tab and the Gradebook tab are **independent views** that share initial state but diverge freely. On syllabus commit, each syllabus assignment creates a paired `Assignment` (task/schedule) and `GradebookEntry` (grade contributor), linked by a `source_assignment_id`. From that point on:
 
@@ -59,7 +58,7 @@ The Assignments tab and the Gradebook tab are **independent views** that share i
 | Course Detail | Tabs: **Gradebook** (graded entries grouped by category, plus the prediction query box), **Assignments** (schedule/task list with `source` visible and `kind` badged; `completed` is per-row), **Instructors** (per-course host directory + weekly hours grid), **Notes** *(conditional — appears only when Claude extracted at least one course-specific note)*. |
 | Calendar | All assignments and exams across courses. Toggle list / week / month. Exams render distinctively (bigger footprint, distinct shape/color) and are **not draggable**; assignments can be **rescheduled by drag-and-drop** on any view. Check off completed items inline. |
 | Office Hour Week | Consolidated weekly grid across all courses; blocks colored by course, filterable by host; live line showing current day and time. |
-| Settings | Phone number (for SMS), target grades, account, sign out. |
+| Settings | Target grades, account, sign out. |
 
 ## Data Model
 
@@ -72,7 +71,7 @@ Hierarchy: `User -> Semester -> Course -> {GradeScaleBand, GradeCategory, Assign
 ### Entities
 
 **User**
-- `id`, `email`, `username`, `name`, `password_hash`, `google_sub` (nullable), `phone` (nullable, E.164 for SMS), `created_at`
+- `id`, `email`, `username`, `name`, `password_hash`, `google_sub` (nullable), `created_at`
 
 **Semester** (acts like a folder for its courses; the switcher on the Semester Hub navigates between them)
 - `id`, `user_id`, `name` (e.g. `"Fall 2025"`, `"F25"`), `start_date` (nullable), `end_date` (nullable), `is_active` (only one true per user)
@@ -95,7 +94,7 @@ Hierarchy: `User -> Semester -> Course -> {GradeScaleBand, GradeCategory, Assign
 - If a syllabus states no grade weightings at all, a single fallback category named `"Overall"` at `weight_pct = 100` is pre-filled on the review screen. The user can accept as-is or restructure before committing.
 
 **Assignment** (a schedule/task item — appears on the Assignments tab and the Calendar)
-- `id`, `course_id`, `name`, `kind` (`assignment | exam`, default `assignment`), `due_date` (nullable), `source` (`syllabus | manual | sms`)
+- `id`, `course_id`, `name`, `kind` (`assignment | exam`, default `assignment`), `due_date` (nullable), `source` (`syllabus | manual`)
 - `completed` (bool, default false), `notes` (nullable free-text)
 - `created_at`, `updated_at`
 - **`Assignment` does not carry a grade.** Grades live on `GradebookEntry`. This is intentional: your task list and your gradebook are independent views. Marking `completed = true` does not affect the gradebook; entering a grade does not affect `completed`.
@@ -104,7 +103,7 @@ Hierarchy: `User -> Semester -> Course -> {GradeScaleBand, GradeCategory, Assign
 **GradebookEntry** (a graded item that contributes to the course grade — appears on the Gradebook tab)
 - `id`, `course_id`, `category_id` (references `GradeCategory`, nullable — user assigns during review or edit), `name`
 - `points_earned` (nullable — null means not yet graded), `points_possible`
-- `source` (`syllabus | manual | sms`), `source_assignment_id` (nullable — points to the `Assignment` this entry was created alongside, if any)
+- `source` (`syllabus | manual`), `source_assignment_id` (nullable — points to the `Assignment` this entry was created alongside, if any)
 - `hidden` (bool, default false — hidden entries do not contribute to grade math but remain visible on the Gradebook tab in a collapsed "hidden" section, so the user can un-hide easily)
 - `created_at`, `updated_at`
 - **Extra credit and bonus points require no special flag.** `points_earned` may exceed `points_possible` (bonus scoring on a normal assignment), and `points_possible` may be `0` (pure extra-credit entry — contributes only when `points_earned > 0`). Grade math handles both cases; see **Grade Math Semantics**.
@@ -118,7 +117,7 @@ Hierarchy: `User -> Semester -> Course -> {GradeScaleBand, GradeCategory, Assign
 - **Edit `Assignment.due_date`** (form or calendar drag-and-drop) → does **not** touch the `GradebookEntry`. The gradebook is dateless by design.
 - **Edit `GradebookEntry.points_earned` / `points_possible` / `category_id`** → does **not** touch the `Assignment`. The task list is grade-less.
 - **Toggle `Assignment.completed`** → does **not** touch `GradebookEntry.points_earned`, and vice versa.
-- **Paired creation is atomic.** Syllabus commit and the SMS `add_assignment` intent both create the paired rows inside a single DB transaction. If either insert fails, both roll back — no orphaned halves.
+- **Paired creation is atomic.** Syllabus commit creates the paired rows inside a single DB transaction. If either insert fails, both roll back — no orphaned halves.
 - **Hard delete for MVP.** No soft-delete/`deleted_at` column on any entity in v1. This is the simplest correct semantics and can be revisited if users start complaining about accidental deletes.
 
 **OfficeHourHost** (a prof, TA, or learning assistant for the course)
@@ -137,9 +136,6 @@ Hierarchy: `User -> Semester -> Course -> {GradeScaleBand, GradeCategory, Assign
 **CourseNote** (course-specific policy or expectation worth surfacing to the student)
 - `id`, `course_id`, `heading`, `body`, `source` (`syllabus | manual`), `created_at`, `updated_at`
 - Populated during syllabus ingestion, but **only** when Claude identifies course-specific content. Generic university boilerplate (Title IX, general academic integrity, disability accommodations, drop deadlines, generic grading-appeal process) is filtered out at extraction time. See **Syllabus Ingestion Pipeline**. If no notes are kept, the Course Detail screen renders no Notes tab.
-
-**SmsMessage** (audit trail; retention limited — see Privacy)
-- `id`, `user_id`, `direction` (`in | out`), `body`, `parsed_intent` (nullable), `target_entity` (nullable, e.g. `assignment:123`, `gradebook_entry:456`), `created_at`
 
 ## Syllabus Ingestion Pipeline
 
@@ -227,7 +223,7 @@ The single most important flow. Four steps:
 
 Let `C` be the set of grade categories for a course. For each category `c`:
 
-- `earned_c` = mean of `points_earned / points_possible` across graded, non-hidden `GradebookEntry` rows in `c`, after dropping the lowest `drop_lowest_n`.
+- `earned_c` = mean of `points_earned / points_possible` across graded, non-hidden `GradebookEntry` rows in `c`, after dropping the lowest `drop_lowest_n` (by ratio). Pure extra-credit rows are never dropped.
 - `has_grades_c` = true if `c` has at least one graded `GradebookEntry`.
 
 **Extra credit is handled naturally by the math:**
@@ -261,23 +257,6 @@ needed_x = (T × 100 − Σ (earned_c × weight_pct_c for c ≠ x))
 
 Every formula in this section is covered by unit tests on the backend.
 
-## SMS Interaction Model
-
-Twilio webhook → FastAPI endpoint → Claude intent classifier → server executes → outbound confirmation. Users register a phone number in Settings; unregistered numbers are ignored.
-
-**Whitelisted intents** (Claude must return exactly one, plus its parameters):
-
-| Intent | Example message | Action |
-|--------|-----------------|--------|
-| `update_grade` | "got an 8/10 on the last CS homework" | Find the latest ungraded `GradebookEntry` in that course + category, set `points_earned`. |
-| `query_grade` | "what's my grade in CS?" | Compute current grade, reply with number. |
-| `query_upcoming` | "what's due this week?" | List `Assignment` rows due in next 7 days, reply with a compact list. |
-| `add_assignment` | "add a quiz for CS due Friday" | Create paired `Assignment` + `GradebookEntry`, both with `source = "sms"`. Default `kind = "assignment"` unless the message names it as exam/quiz/test. |
-| `mark_complete` | "finished the CS reading" | Set `completed = true` on the latest matching `Assignment`. Does not touch its `GradebookEntry`. |
-
-**No silent writes.** If Claude's confidence is low, or multiple items match a "latest homework" reference, Viv replies with a numbered clarification ("Did you mean: 1) HW3, 2) HW4?") and only writes after the user responds. Every inbound and outbound message is stored as an `SmsMessage` for audit; bodies are purged after 30 days.
-
-**Deployment notes.** US-based public SMS requires Twilio A2P 10DLC registration (business verification, roughly `$1/month` + campaign fees) — a real friction cost that's out of scope for the hackathon. For the demo, use a Twilio trial number with the demo phone verified on the account. Twilio webhooks time out at ~15 seconds; wrap Claude/DB work in FastAPI `BackgroundTasks` (or a lightweight task queue) so the webhook acknowledges immediately and the actual write happens async. SMS is intentionally near the bottom of the Stretch list for these reasons.
 
 ## API & Backend
 
@@ -303,14 +282,12 @@ Python FastAPI backend. Claude is called **only from the backend** so the Anthro
 - `GET/POST /courses/{id}/class-meetings`, `PATCH/DELETE /class-meetings/{id}`
 - `GET/POST /courses/{id}/notes`, `PATCH/DELETE /notes/{id}`
 - `POST /courses/{id}/predict` — body: `{ query: string }`; returns `{ answer: number | scenarios[], explanation: string }`
-- `POST /sms/webhook` — Twilio inbound (returns immediately; processing happens in a background task)
 
 ## Privacy Note
 
 - **Transparency:** Syllabus text is sent to Vivifi's backend, which forwards it to Claude for extraction. Users are told this on the upload screen.
 - **Data handling:** Raw syllabus text is never persisted. Only the structured extraction the user confirms is stored (course meta, categories, grading scale, assignments/exams, hosts, office hours, class meetings, and any course-specific notes).
-- **SMS retention:** Inbound and outbound SMS bodies are stored for 30 days for debugging/audit, then purged. Users can request earlier deletion from Settings.
-- **Secrets:** All API keys (Anthropic, Twilio, Google OAuth) live on the backend only.
+- **Secrets:** All API keys (Anthropic, Google OAuth) live on the backend only.
 
 ## Design & Branding
 
@@ -319,10 +296,10 @@ Python FastAPI backend. Claude is called **only from the backend** so the Anthro
 - **Per-course accent.** Each Course Detail page overrides `--color-accent` at its wrapper element with the course's `color` field. Buttons, active tabs, calendar dots for that course's assignments, and the current-time line on Office Hour Week all inherit that value automatically — one CSS variable override, whole page re-themes.
 - **Themeable by construction.** Because everything routes through CSS variables, adding an entire new theme (Midnight, Sage, Paperwhite, ...) is a ~10-line CSS class that redefines the variables — zero component changes. See the Stretch list; this pairs with the customization goal in **Vibe** below.
 - **Typography:** Inter for UI copy; JetBrains Mono for grades and numbers (makes the gradebook feel precise and calculator-like).
-- **Style direction:** calm, information-dense, *not* an AI chat app. Cards over drop shadows, generous whitespace around numbers, no chat bubbles anywhere in the UI. Every AI touchpoint (syllabus review, prediction query, SMS) uses structured input/output — never a conversational thread.
+- **Style direction:** calm, information-dense, *not* an AI chat app. Cards over drop shadows, generous whitespace around numbers, no chat bubbles anywhere in the UI. Every AI touchpoint (syllabus review, prediction query) uses structured input/output — never a conversational thread.
 - **Vibe:** clean, so that the vibe is customizable. There should be some choice in choosing color theme for the whole page, or even uploading images as the vibe for each course so it can be chosen. Think customizable like a Canvas page, or Notion page.
 - **Course dashboard, not a grid.** The Semester Hub uses a *dashboard* layout — visually rich course cards with hero color, name, code, current grade, and next upcoming item — not a boring uniform spreadsheet grid. Should feel warm and skimmable, not like a Canvas course-list.
-- **Nickname convention.** The product name is **Vivifi**; use it everywhere formal (headings, docs, buttons, error copy). **Viv** is the casual/SMS short form: use it in the SMS metaphor ("Text Viv"), in the pitch, and nowhere else.
+- **Nickname convention.** The product name is **Vivifi**; use it everywhere formal (headings, docs, buttons, error copy). Keep the voice non-chatty — structured answers, not a conversational agent.
 
 ## Tech Stack
 
@@ -340,14 +317,12 @@ Python FastAPI backend. Claude is called **only from the backend** so the Anthro
 - Postgres 15+ (Neon serverless — free tier, database branching for schema iteration)
 - `pdfplumber` for PDF text extraction
 - `anthropic` SDK for Claude
-- `twilio` SDK for SMS (only when SMS reaches implementation)
 - `authlib` for Google OAuth
 - `python-jose` + `bcrypt` for JWT + password hashing
 - Web service hosted on Render (free tier; Cloudflare/UptimeRobot keep-alive ping every 10 minutes to prevent cold starts)
 
 **External services**
-- Anthropic Claude (syllabus parsing, SMS intent classification, grade-prediction query interpretation)
-- Twilio (SMS in/out — stretch)
+- Anthropic Claude (syllabus parsing, grade-prediction query interpretation)
 - Google OAuth (login)
 
 ## Platform Targets
@@ -356,16 +331,15 @@ Python FastAPI backend. Claude is called **only from the backend** so the Anthro
 - **Frontend:** GitHub Pages.
 - **Backend:** Render (free web service).
 - **Database:** Neon (free serverless Postgres, separate provider from the backend host).
-- **SMS:** Twilio (Messaging Service with a single US long code or toll-free number). Deferred to stretch.
-
-Login is unified across access surfaces (web + SMS-linked phone number, when SMS ships) via the Render-hosted backend.
+Login is via the Render-hosted backend (email/password or Google OAuth).
 
 ## Milestones
 
 - **1 — Foundations.** Repo layout (`frontend/`, `backend/`). FastAPI skeleton + Postgres + Alembic + email/password auth. Vite + Tailwind + routing scaffold. **Semester Setup screen and empty-state UX**, Semester and Course CRUD wired end-to-end. Both apps deployed (Render + GitHub Pages) even if empty — deployment friction should be paid down early.
 - **2 — Live Syllabus.** PDF upload endpoint (10 MB cap), `pdfplumber` extraction, Claude structured-extraction prompt hardened against messy syllabi — including exam-vs-assignment classification, recurring-item expansion using semester dates, host roster extraction, class meeting extraction, course-specific note surfacing (with the boilerplate filter), and default-Overall-category fallback. Syllabus Review screen with editable tables and the incomplete-extraction banner. Commit flow creates paired `Assignment` + `GradebookEntry` rows. This is the flagship demo moment — polish it hardest.
 - **3 — Grade Math + Views.** Gradebook UI with the split model: entries auto-populated from assignments, plus manual attendance/participation entries and hide/delete affordances independent from the Assignments tab. Grade math engine with unit tests including extra-credit cases (this is the one place a subtle bug destroys credibility). Query-box prediction flow (backend endpoint + minimal frontend UI). Calendar screen (month view first) with drag-and-drop rescheduling and distinct exam rendering. Course Detail Instructors tab. Conditional Notes tab.
-- **4 — Polish.** Google OAuth. Empty states, error states, mobile responsive pass. Demo script + README + short walkthrough video. **SMS is deferred to stretch** — see the MVP vs Stretch section for reasoning.
+- **4 — Polish.** Google OAuth. Empty states, error states, mobile responsive pass. Demo script + README + short walkthrough video.
+- **5 — Stretch pack.** `drop_lowest_n` in grade math. Calendar week + list views (drag-and-drop on each). Consolidated Office Hour Week across courses.
 
 ## MVP vs Stretch
 
@@ -385,23 +359,22 @@ Login is unified across access surfaces (web + SMS-linked phone number, when SMS
 - Fallback single `Overall` category when the syllabus states no weights
 - Incomplete-extraction banner + no-assignments messaging on the review screen
 
-**Stretch (in priority order):**
-1. Consolidated Office Hour Week view (cross-course grid)
-2. Google OAuth
-3. Calendar week and list views (with drag-and-drop on both)
-4. `drop_lowest_n` support in category math
-5. Scenarios table for multi-item predictions
-6. Textbooks / required materials as a first-class entity (currently these live in `CourseNote`)
-7. Past-semester read-only browsing
-8. User-selectable themes via CSS-variable class swap
-9. Per-host filter on the Office Hour Week view
-10. Course-level image/cover upload for the Vibe customization goal
-11. Notifications / reminders ("your midterm is tomorrow" — browser push, or email, or SMS if that's built)
-12. **SMS companion** (Twilio + intent classifier + audit table) — deliberately near the bottom: A2P 10DLC verification is real deployment friction, webhook timeout handling adds async complexity, and the feature is demo-only until compliance work is done. Consider it "aspirational" for the hackathon submission rather than promised.
-13. **Additional class-hour types** (recitations, labs, seminars, "MATLAB reci" and other course-specific sub-sessions). MVP folds everything into a single `ClassMeeting` entity, which loses the distinction between a normal lecture and, say, a required Friday MATLAB recitation. A future revision could add a `kind` (`lecture | recitation | lab | seminar | other`) to `ClassMeeting` so the calendar and future "class-meeting-aware" features can differentiate them. Deferred because the long tail of naming conventions ("reci", "PSO", "SI session", ...) makes fully-modeled taxonomy unbounded, and lumping into `ClassMeeting` is the least wrong default.
-14. Class meeting calendar
-15. **Drag-to-reorder semester tabs.** The folder-style switcher currently renders tabs in creation order (older on the left, newer on the right) and holds that order regardless of which semester is active. Drag-to-reorder would let students group tabs by their own logic (e.g. current semester on the far left even if it wasn't created first). Requires an `order_index` column on `Semester`, a `PUT /semesters/order` endpoint that accepts an ordered list of slugs, and HTML5 drag handlers on each tab with an optimistic-update mutation.
-16. **Paired rename prompt.** Renaming an `Assignment` does **not** propagate to its linked `GradebookEntry` (and vice versa) — intentional split-model divergence. Stretch UX: when the user renames one half of a pair that still shares a `source_assignment_id` link, offer "Rename the linked gradebook entry / assignment too?" so they can keep labels in sync without losing the option to diverge. MVP keeps independent inline renames on each tab.
+**Shipped stretch (no longer aspirational):**
+- Google OAuth
+- Scenarios table for multi-item predictions
+- `drop_lowest_n` support in category math
+- Calendar week and list views (with drag-and-drop on both)
+- Consolidated Office Hour Week view (cross-course grid, host filter, live now-line)
+
+**Stretch (remaining, in priority order):**
+1. Textbooks / required materials as a first-class entity (currently these live in `CourseNote`)
+3. User-selectable themes via CSS-variable class swap
+4. Course-level image/cover upload for the Vibe customization goal
+5. Notifications / reminders ("your midterm is tomorrow" — browser push or email)
+6. **Additional class-hour types** (recitations, labs, seminars, "MATLAB reci" and other course-specific sub-sessions). MVP folds everything into a single `ClassMeeting` entity, which loses the distinction between a normal lecture and, say, a required Friday MATLAB recitation. A future revision could add a `kind` (`lecture | recitation | lab | seminar | other`) to `ClassMeeting` so the calendar and future "class-meeting-aware" features can differentiate them. Deferred because the long tail of naming conventions ("reci", "PSO", "SI session", ...) makes fully-modeled taxonomy unbounded, and lumping into `ClassMeeting` is the least wrong default.
+7. Class meeting calendar
+8. **Drag-to-reorder semester tabs.** The folder-style switcher currently renders tabs in creation order (older on the left, newer on the right) and holds that order regardless of which semester is active. Drag-to-reorder would let students group tabs by their own logic (e.g. current semester on the far left even if it wasn't created first). Requires an `order_index` column on `Semester`, a `PUT /semesters/order` endpoint that accepts an ordered list of slugs, and HTML5 drag handlers on each tab with an optimistic-update mutation.
+9. **Paired rename prompt.** Renaming an `Assignment` does **not** propagate to its linked `GradebookEntry` (and vice versa) — intentional split-model divergence. Stretch UX: when the user renames one half of a pair that still shares a `source_assignment_id` link, offer "Rename the linked gradebook entry / assignment too?" so they can keep labels in sync without losing the option to diverge. MVP keeps independent inline renames on each tab.
 
 ## Constraints & Non-Goals
 
@@ -417,7 +390,9 @@ Login is unified across access surfaces (web + SMS-linked phone number, when SMS
 ## Acceptance Criteria
 
 - A new user can go from landing page to a fully-populated first course in **under 3 minutes** using only a PDF syllabus: Login → Semester Setup → Add Course → Upload → Review → Commit.
-- Gradebook math is verifiable by hand against the worked example in the Grade Math Semantics section, and is covered by backend unit tests. Assignments and exams contribute identically. Extra credit (`points_earned > points_possible` or `points_possible = 0`) is handled without special casing from the caller.
+- Gradebook math is verifiable by hand against the worked example in the Grade Math Semantics section, and is covered by backend unit tests. Assignments and exams contribute identically. Extra credit (`points_earned > points_possible` or `points_possible = 0`) is handled without special casing from the caller. Categories with `drop_lowest_n > 0` exclude that many lowest graded normal ratios before averaging.
+- The Calendar screen toggles month / week / list. Month and week support drag-and-drop reschedule; list is a chronological browse of the same events.
+- The Office Hour Week screen shows a consolidated cross-course grid, colored by course, with host filter and a live now-line on the current day column.
 - The prediction query "what do I need on the final to get an A?" returns a **number** (or a scenarios table), never prose or a chat reply.
 - The **Assignments** tab and the **Gradebook** tab are independent: toggling `completed` on an `Assignment` does not affect its linked `GradebookEntry`, and vice versa. Deleting a `GradebookEntry` does not delete its linked `Assignment`.
 - The user can add a manual `GradebookEntry` (e.g. "Overall attendance") in any category without creating a paired `Assignment`.
@@ -427,6 +402,5 @@ Login is unified across access surfaces (web + SMS-linked phone number, when SMS
 - If the uploaded syllabus specifies no grade weights, the review screen pre-fills a single `Overall` category at 100% and does not block commit.
 - If Claude expands a recurring assignment (given valid semester dates), the resulting individual rows are shown on the review screen for the user to accept or edit before commit.
 - Uploads over 10 MB are rejected server-side with a clear error message.
-- No SMS message writes to the DB without either (a) an unambiguous intent match or (b) an explicit confirming reply from the user.
 - No raw syllabus text is persisted after a successful ingestion — only the user-confirmed structured extraction.
 - All AI calls (Claude) originate from the backend; the Anthropic API key is never bundled into the frontend.

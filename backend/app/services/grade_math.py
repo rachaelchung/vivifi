@@ -24,9 +24,10 @@ Extra credit handling (SPEC-exact):
   `typical_points_possible` is the mean `points_possible` across normal entries
   in the same category — or 100 if the category has no normal entries).
 
-`drop_lowest_n` is on the SPEC's Stretch list (#4) and is not implemented in
-this MVP. The field is persisted so a future revision can turn it on without
-migrating data.
+`drop_lowest_n` on a category drops the lowest-scoring graded normal entries
+(by ratio) before the category mean is taken. Pure extra-credit rows are never
+dropped. If every graded normal is dropped, the category contributes only via
+remaining EC (or is treated as ungraded when none remain).
 """
 
 from __future__ import annotations
@@ -62,6 +63,7 @@ class CategoryInput:
     id: int
     name: str
     weight_pct: float  # 0-100
+    drop_lowest_n: int = 0
 
 
 @dataclass(frozen=True)
@@ -114,11 +116,16 @@ class PredictionResult:
 # --- category earned computation -------------------------------------------
 
 
-def compute_category_earned(entries: Iterable[EntryInput]) -> float | None:
+def compute_category_earned(
+    entries: Iterable[EntryInput],
+    *,
+    drop_lowest_n: int = 0,
+) -> float | None:
     """Return `earned_c` as a fraction (0.0-∞) or None if no graded entries.
 
-    Skips hidden and ungraded entries. Handles both extra-credit flavors per
-    SPEC §Grade Math Semantics.
+    Skips hidden and ungraded entries. Drops the lowest `drop_lowest_n` graded
+    normal entries (by ratio) before averaging. Handles both extra-credit
+    flavors per SPEC §Grade Math Semantics.
     """
     normal_graded: list[EntryInput] = []
     ec_graded: list[EntryInput] = []
@@ -132,6 +139,21 @@ def compute_category_earned(entries: Iterable[EntryInput]) -> float | None:
             ec_graded.append(e)
         # points_possible == 0 and points_earned == 0 → contributes nothing.
 
+    # typical_pp is measured against the full graded-normal set (pre-drop) so
+    # EC scaling stays stable when drop_lowest removes rows.
+    if normal_graded:
+        typical_pp = sum(e.points_possible for e in normal_graded) / len(normal_graded)
+    else:
+        typical_pp = 100.0
+
+    if drop_lowest_n > 0 and normal_graded:
+        normal_graded = sorted(
+            normal_graded,
+            key=lambda e: (e.points_earned or 0) / e.points_possible,
+        )
+        drop = min(drop_lowest_n, len(normal_graded))
+        normal_graded = normal_graded[drop:]
+
     if not normal_graded and not ec_graded:
         return None
 
@@ -139,12 +161,9 @@ def compute_category_earned(entries: Iterable[EntryInput]) -> float | None:
         base = sum(e.points_earned / e.points_possible for e in normal_graded) / len(  # type: ignore[operator]
             normal_graded
         )
-        typical_pp = sum(e.points_possible for e in normal_graded) / len(normal_graded)
     else:
-        # Only pure-EC entries exist. Fall back to a typical_pp of 100 so a
-        # 1-point EC roughly moves the needle by 1%.
+        # Every normal was dropped (or none existed) — category is EC-only.
         base = 0.0
-        typical_pp = 100.0
 
     ec_bonus = 0.0
     if ec_graded and typical_pp > 0:
@@ -177,7 +196,9 @@ def compute_current_grade(
 
     for cat in categories:
         cat_entries = _entries_for_category(entries_list, cat.id)
-        earned = compute_category_earned(cat_entries)
+        earned = compute_category_earned(
+            cat_entries, drop_lowest_n=cat.drop_lowest_n
+        )
         has_grades = earned is not None
 
         if has_grades:
@@ -291,7 +312,10 @@ def _sum_other_weighted_earned(
     for c in categories:
         if c.id == exclude_category_id:
             continue
-        earned = compute_category_earned(_entries_for_category(entries, c.id))
+        earned = compute_category_earned(
+            _entries_for_category(entries, c.id),
+            drop_lowest_n=c.drop_lowest_n,
+        )
         if earned is None:
             ungraded.append(c)
             continue
@@ -624,6 +648,13 @@ def _category_stats(
         cat_entries = [e for e in entries if e.category_id == c.id and not e.hidden]
         normals = [e for e in cat_entries if e.points_possible > 0]
         graded_normals = [e for e in normals if e.points_earned is not None]
+        # Mirror compute_category_earned: drop the lowest graded ratios first.
+        drop_applied = min(max(c.drop_lowest_n, 0), len(graded_normals))
+        if drop_applied:
+            graded_normals = sorted(
+                graded_normals,
+                key=lambda e: (e.points_earned or 0) / e.points_possible,
+            )[drop_applied:]
         graded_ratio_sum = sum(
             e.points_earned / e.points_possible for e in graded_normals  # type: ignore[operator]
         )
@@ -643,7 +674,8 @@ def _category_stats(
             else 0.0
         )
         out[c.id] = {
-            "N": len(normals),
+            # Effective slot count after drops (kept graded + still-ungraded).
+            "N": len(normals) - drop_applied,
             "graded_ratio_sum": graded_ratio_sum,
             "ec_bonus": ec_bonus,
             "weight_pct": c.weight_pct,
@@ -996,7 +1028,14 @@ def apply_reweight(
     scaled_report: list[tuple[str, float, float]] = []
     for c in categories:
         new_w = c.weight_pct * scale
-        scaled_cats.append(CategoryInput(id=c.id, name=c.name, weight_pct=new_w))
+        scaled_cats.append(
+            CategoryInput(
+                id=c.id,
+                name=c.name,
+                weight_pct=new_w,
+                drop_lowest_n=c.drop_lowest_n,
+            )
+        )
         scaled_report.append((c.name, c.weight_pct, new_w))
 
     used_ids = {c.id for c in categories} | {e.id for e in entries}
@@ -1009,7 +1048,12 @@ def apply_reweight(
         synth_entry_id -= 1
 
     scaled_cats.append(
-        CategoryInput(id=synth_cat_id, name=new_category_name, weight_pct=new_weight_pct)
+        CategoryInput(
+            id=synth_cat_id,
+            name=new_category_name,
+            weight_pct=new_weight_pct,
+            drop_lowest_n=0,
+        )
     )
     synthetic_entry = EntryInput(
         id=synth_entry_id,

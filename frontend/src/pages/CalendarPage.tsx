@@ -8,6 +8,7 @@ import type {
 } from "@fullcalendar/core";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
+import listPlugin from "@fullcalendar/list";
 import { useQueries, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -17,25 +18,33 @@ import { useCoursesForSemester } from "@/api/courses";
 import { useSemesters, useUpdateSemester } from "@/api/semesters";
 import type { Assignment, Course } from "@/api/types";
 import { BrandMark } from "@/components/BrandMark";
+import { EmptyState } from "@/components/EmptyState";
 import { SemesterSwitcher } from "@/components/SemesterSwitcher";
 import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
+
+type CalView = "dayGridMonth" | "dayGridWeek" | "listWeek";
+
+const VIEW_OPTIONS: { id: CalView; label: string }[] = [
+  { id: "dayGridMonth", label: "Month" },
+  { id: "dayGridWeek", label: "Week" },
+  { id: "listWeek", label: "List" },
+];
 
 /**
  * Multi-course calendar view.
  *
  * SPEC:
- * - Month view first (list/week are Stretch #3).
- * - Assignments are draggable → PATCH `due_date` server-side.
+ * - Month / week / list toggles; drag-and-drop reschedule on each.
  * - Exams render distinctively AND are non-draggable.
- * - Completion toggles the Assignment row only (split model — never the
- *   gradebook). Completed rows fade + strike through, matching Assignments.
- * - Events show the course name under the title; legend uses course names.
+ * - Completion toggles the Assignment row only (split model).
  */
 export default function CalendarPage() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const calRef = useRef<FullCalendar | null>(null);
   const [title, setTitle] = useState<string>("");
+  const [view, setView] = useState<CalView>("dayGridMonth");
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
 
   const semestersQ = useSemesters();
@@ -110,7 +119,6 @@ export default function CalendarPage() {
   }, [courses, assignmentQueries]);
 
   function handleSelectSemester(slug: string) {
-    // Clicking the already-selected semester leaves calendar for that hub.
     if (slug === selectedSlug) {
       navigate("/");
       return;
@@ -120,6 +128,11 @@ export default function CalendarPage() {
     if (target && !target.is_active) {
       updateSemester.mutate({ slug, payload: { is_active: true } });
     }
+  }
+
+  function changeView(next: CalView) {
+    setView(next);
+    calRef.current?.getApi().changeView(next);
   }
 
   async function handleEventDrop(info: EventDropArg) {
@@ -165,7 +178,6 @@ export default function CalendarPage() {
   }
 
   function handleEventClick(info: EventClickArg) {
-    // Ignore clicks that originated on the checkbox (it handles itself).
     const target = info.jsEvent.target as HTMLElement | null;
     if (target?.closest("[data-vv-complete]")) {
       info.jsEvent.preventDefault();
@@ -242,12 +254,14 @@ export default function CalendarPage() {
   return (
     <div className="min-h-screen">
       <header className="border-b border-border">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5">
           <BrandMark />
-          <div className="flex items-center gap-4 text-sm">
+          <div className="flex min-w-0 items-center gap-2 text-sm sm:gap-4">
             {user ? (
               <>
-                <span className="text-muted">{user.email}</span>
+                <span className="hidden truncate text-muted sm:inline">
+                  {user.email}
+                </span>
                 <button className="btn-ghost" onClick={signOut} type="button">
                   Sign out
                 </button>
@@ -257,7 +271,7 @@ export default function CalendarPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 pb-24 pt-8">
+      <main className="mx-auto max-w-6xl px-4 pb-24 pt-6 sm:px-6 sm:pt-8">
         {semestersQ.isLoading || !semesters ? (
           <p className="text-sm text-muted">Loading…</p>
         ) : (
@@ -270,8 +284,8 @@ export default function CalendarPage() {
             />
 
             <div className="mb-6 mt-8 flex flex-wrap items-baseline justify-between gap-4">
-              <div>
-                <h1 className="text-3xl font-semibold tracking-tight">
+              <div className="min-w-0">
+                <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
                   Calendar
                 </h1>
                 <p className="mt-1 text-sm text-muted">
@@ -287,18 +301,41 @@ export default function CalendarPage() {
             {anyLoading ? (
               <p className="text-sm text-muted">Loading calendar…</p>
             ) : courses.length === 0 ? (
-              <p className="text-sm text-muted">
-                No courses in this semester yet.{" "}
-                <Link to="/" className="text-accent hover:underline">
-                  Add one from the hub
-                </Link>
-                .
-              </p>
+              <EmptyState
+                title="No courses to show"
+                description="Add a course from the semester hub, then upload its syllabus — dated assignments and exams will show up here."
+                action={
+                  <Link to="/" className="btn-primary">
+                    Back to semester hub
+                  </Link>
+                }
+              />
             ) : (
-              <div className="card p-4">
-                <div className="mb-3 flex items-center justify-between">
+              <div className="card overflow-x-auto p-3 sm:p-4">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <p className="text-sm font-medium">{title}</p>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+                    <div
+                      className="mr-1 flex rounded-lg border border-border p-0.5"
+                      role="group"
+                      aria-label="Calendar view"
+                    >
+                      {VIEW_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          className={cn(
+                            "rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                            view === opt.id
+                              ? "bg-fg text-bg"
+                              : "text-muted hover:text-fg",
+                          )}
+                          onClick={() => changeView(opt.id)}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
                     <button
                       type="button"
                       className="btn-ghost text-xs"
@@ -324,8 +361,8 @@ export default function CalendarPage() {
                 </div>
                 <FullCalendar
                   ref={calRef}
-                  plugins={[dayGridPlugin, interactionPlugin]}
-                  initialView="dayGridMonth"
+                  plugins={[dayGridPlugin, listPlugin, interactionPlugin]}
+                  initialView={view}
                   headerToolbar={false}
                   height="auto"
                   firstDay={0}
@@ -333,10 +370,28 @@ export default function CalendarPage() {
                   eventContent={renderEventContent}
                   eventDrop={handleEventDrop}
                   eventClick={handleEventClick}
-                  datesSet={(info: DatesSetArg) => setTitle(info.view.title)}
+                  datesSet={(info: DatesSetArg) => {
+                    setTitle(info.view.title);
+                    const name = info.view.type as CalView;
+                    if (
+                      name === "dayGridMonth" ||
+                      name === "dayGridWeek" ||
+                      name === "listWeek"
+                    ) {
+                      setView(name);
+                    }
+                  }}
                   eventDisplay="block"
                   displayEventTime={false}
                   dayMaxEventRows={5}
+                  views={{
+                    dayGridWeek: {
+                      dayMaxEventRows: false,
+                    },
+                    listWeek: {
+                      noEventsText: "Nothing due this week.",
+                    },
+                  }}
                 />
               </div>
             )}

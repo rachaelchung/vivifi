@@ -25,7 +25,7 @@ export function TabNav({ active, onSelect, showNotes }: TabNavProps) {
     <div
       role="tablist"
       aria-label="Course sections"
-      className="flex gap-1 border-b border-border"
+      className="-mx-1 flex gap-1 overflow-x-auto border-b border-border px-1"
     >
       {tabs.map((tab) => {
         const selected = tab.id === active;
@@ -37,7 +37,7 @@ export function TabNav({ active, onSelect, showNotes }: TabNavProps) {
             aria-selected={selected}
             onClick={() => onSelect(tab.id)}
             className={cn(
-              "relative -mb-px border-b-2 px-4 py-3 text-sm font-medium transition-colors",
+              "relative -mb-px flex-shrink-0 border-b-2 px-3 py-3 text-sm font-medium transition-colors sm:px-4",
               selected
                 ? "border-accent text-fg"
                 : "border-transparent text-muted hover:text-fg",

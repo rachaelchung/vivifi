@@ -1,4 +1,4 @@
-import { apiRequest } from "@/api/client";
+import { apiRequest, apiBaseUrl } from "@/api/client";
 import type { AuthTokenResponse, User } from "@/api/types";
 
 export interface RegisterPayload {
@@ -11,6 +11,10 @@ export interface RegisterPayload {
 export interface LoginPayload {
   identifier: string;
   password: string;
+}
+
+export interface AuthProviders {
+  google: boolean;
 }
 
 export function register(payload: RegisterPayload): Promise<AuthTokenResponse> {
@@ -31,4 +35,13 @@ export function login(payload: LoginPayload): Promise<AuthTokenResponse> {
 
 export function fetchMe(): Promise<User> {
   return apiRequest<User>("/auth/me");
+}
+
+export function fetchAuthProviders(): Promise<AuthProviders> {
+  return apiRequest<AuthProviders>("/auth/providers", { auth: false });
+}
+
+/** Full-page navigation target that starts the Google OAuth dance. */
+export function googleAuthUrl(): string {
+  return `${apiBaseUrl}/auth/google`;
 }
