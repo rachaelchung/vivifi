@@ -54,7 +54,14 @@ def upgrade() -> None:
 
     # Existing rows were extracted without section alternatives — treat as the
     # student's schedule so the Week Schedule isn't empty after migrate.
-    op.execute(sa.text("UPDATE class_meetings SET is_mine = 1"))
+    # Postgres rejects integer literals for boolean columns; SQLite accepts 1.
+    op.execute(
+        sa.text(
+            "UPDATE class_meetings SET is_mine = 1"
+            if conn.dialect.name == "sqlite"
+            else "UPDATE class_meetings SET is_mine = true"
+        )
+    )
 
 
 def downgrade() -> None:
