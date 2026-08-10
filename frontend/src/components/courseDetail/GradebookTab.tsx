@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type {
   CurrentGrade,
   GradeCategory,
+  GradeScaleBand,
   GradebookEntry,
 } from "@/api/types";
 import {
@@ -11,6 +12,7 @@ import {
   useCurrentGrade,
   useDeleteGradebookEntry,
   useGradebookEntries,
+  useGradingScale,
   useUpdateGradebookEntry,
 } from "@/api/liveViews";
 import { PredictionBox } from "@/components/courseDetail/PredictionBox";
@@ -29,11 +31,14 @@ interface GradebookTabProps {
  *   `hidden` collapses the row into a "hidden" section but doesn't delete it.
  *   Deleting an entry doesn't touch the paired Assignment (split model).
  * - Prediction "query box, not a chat" sits at the top of the tab.
+ * - Course grading scale (`GradeScaleBand`) is shown alongside the current
+ *   grade so letter cutoffs are visible without leaving the tab.
  */
 export function GradebookTab({ courseSlug }: GradebookTabProps) {
   const grade = useCurrentGrade(courseSlug);
   const entriesQ = useGradebookEntries(courseSlug);
   const categoriesQ = useCategories(courseSlug);
+  const scaleQ = useGradingScale(courseSlug);
 
   if (grade.isLoading || entriesQ.isLoading || categoriesQ.isLoading) {
     return <p className="text-sm text-muted">Loading gradebook…</p>;
@@ -51,7 +56,12 @@ export function GradebookTab({ courseSlug }: GradebookTabProps) {
 
   return (
     <div className="space-y-8">
-      <CurrentGradeHeader grade={grade.data ?? null} />
+      <CurrentGradeHeader
+        grade={grade.data ?? null}
+        bands={scaleQ.data ?? []}
+        scaleLoading={scaleQ.isLoading}
+        scaleError={!!scaleQ.error}
+      />
       <PredictionBox courseSlug={courseSlug} />
       <EntriesByCategory
         courseSlug={courseSlug}
@@ -64,9 +74,21 @@ export function GradebookTab({ courseSlug }: GradebookTabProps) {
 
 // --- header --------------------------------------------------------------
 
-function CurrentGradeHeader({ grade }: { grade: CurrentGrade | null }) {
+function CurrentGradeHeader({
+  grade,
+  bands,
+  scaleLoading,
+  scaleError,
+}: {
+  grade: CurrentGrade | null;
+  bands: GradeScaleBand[];
+  scaleLoading: boolean;
+  scaleError: boolean;
+}) {
   if (!grade) return null;
   const hasGrade = grade.percentage !== null;
+  const sorted = [...bands].sort((a, b) => b.min_pct - a.min_pct);
+  const showScale = !scaleLoading && !scaleError && sorted.length > 0;
 
   return (
     <section className="card p-6">
@@ -129,8 +151,25 @@ function CurrentGradeHeader({ grade }: { grade: CurrentGrade | null }) {
           ))}
         </div>
       ) : null}
+
+      {showScale ? (
+        <p className="font-num mt-5 overflow-x-auto whitespace-nowrap border-t border-border pt-3 text-xs text-muted">
+          {sorted.map((band, i) => (
+            <span key={band.id}>
+              {i > 0 ? <span className="mx-2 text-border">·</span> : null}
+              <span className="text-fg/80">{band.letter}</span>
+              <span className="ml-1">{formatPct(band.min_pct)}%+</span>
+            </span>
+          ))}
+        </p>
+      ) : null}
     </section>
   );
+}
+
+function formatPct(n: number): string {
+  const rounded = Math.round(n * 10) / 10;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
 }
 
 // --- entries -------------------------------------------------------------
