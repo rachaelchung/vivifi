@@ -29,7 +29,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 function RedirectIfAuthed({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return <LoadingScreen />;
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to="/home" replace />;
   return <>{children}</>;
 }
 
@@ -94,14 +94,14 @@ export default function App() {
         }
       />
       <Route
-        path="/"
+        path="/home"
         element={
           <RequireAuth>
             <SemesterHubPage />
           </RequireAuth>
         }
       />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/home" replace />} />
     </Routes>
   );
 }

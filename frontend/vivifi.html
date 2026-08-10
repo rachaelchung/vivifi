@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vivifi — Your syllabus, alive.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,200;1,300;1,400;1,500;1,600;1,700;1,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="vivifilogo.png" />
+<style>
+  :root{
+    --color-bg: #faf7f2;
+    --color-fg: #1b1b1f;
+    --color-surface: #ffffff;
+    --color-muted: #6c6c73;
+    --color-border: #e8e2d7;
+    --color-accent: #d97757;
+    --color-accent-fg: #ffffff;
+    --color-danger: #b34a3a;
+
+    --course-blue: #4f6f93;
+    --course-green: #7c9464;
+
+    --font-display: 'Spectral', ui-serif, Georgia, serif;
+    --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+    --shadow-card: 0 1px 2px rgba(27,27,31,0.04), 0 6px 20px rgba(27,27,31,0.05);
+    --shadow-card-hover: 0 4px 10px rgba(27,27,31,0.06), 0 16px 32px rgba(27,27,31,0.08);
+    --max-w: 1160px;
+  }
+
+  *{ box-sizing: border-box; }
+  html{ scroll-behavior: smooth; }
+
+  body{
+    margin:0;
+    background: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.5;
+  }
+
+  a{ color: inherit; }
+
+  .wrap{
+    max-width: var(--max-w);
+    margin: 0 auto;
+    padding: 20px 32px;
+  }
+
+  ::selection{ background: color-mix(in oklab, var(--color-accent) 30%, transparent); }
+
+  /* ---------- utility ---------- */
+  .eyebrow{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--color-accent);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+  }
+  .eyebrow::before{
+    content: "";
+    width: 6px; height: 6px;
+    border-radius: 999px;
+    background: var(--color-accent);
+    display: inline-block;
+  }
+
+  .btn{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border-radius: 10px;
+    padding: 12px 22px;
+    font-size: 14.5px;
+    font-weight: 600;
+    font-family: var(--font-body);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease, color .18s ease, border-color .18s ease;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .btn-primary{
+    background: var(--color-accent);
+    color: var(--color-accent-fg);
+  }
+  .btn-primary:hover{
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(217,119,87,0.35);
+  }
+  .btn-ghost{
+    background: transparent;
+    color: var(--color-fg);
+    border-color: var(--color-border);
+  }
+  .btn-ghost:hover{
+    background: var(--color-surface);
+    border-color: var(--color-fg);
+  }
+  .btn-sm{ padding: 9px 16px; font-size: 13.5px; }
+
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-muted);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    padding: 6px 10px;
+    border-radius: 999px;
+  }
+
+  /* ---------- reveal-on-scroll ---------- */
+  .reveal{
+    opacity: 0;
+    transform: translateY(18px);
+    transition: opacity .7s cubic-bezier(.2,.7,.2,1), transform .7s cubic-bezier(.2,.7,.2,1);
+  }
+  .reveal.is-visible{
+    opacity: 1;
+    transform: none;
+  }
+  .reveal-delay-1{ transition-delay: .08s; }
+  .reveal-delay-2{ transition-delay: .16s; }
+  .reveal-delay-3{ transition-delay: .24s; }
+
+  @media (prefers-reduced-motion: reduce){
+    html{ scroll-behavior: auto; }
+    .reveal{ opacity: 1 !important; transform: none !important; transition: none !important; }
+    *{ animation: none !important; }
+  }
+
+  /* ---------- nav ---------- */
+  header{
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: color-mix(in oklab, var(--color-bg) 88%, transparent);
+    backdrop-filter: saturate(140%) blur(10px);
+    border-bottom: 1px solid var(--color-border);
+  }
+  nav{
+    max-width: var(--max-w);
+    margin: 0 auto;
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  .logo{
+    display:flex; align-items:center; gap: 9px;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 19px;
+    text-decoration:none;
+    color: var(--color-fg);
+  }
+  .logo-mark{
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    display: block;
+    border-radius: 4px;
+  }
+  .nav-links{
+    display:flex; align-items:center; gap: 30px;
+    list-style:none; margin:0; padding:0;
+  }
+  .nav-links a{
+    text-decoration:none;
+    font-size: 14.5px;
+    color: var(--color-muted);
+    position: relative;
+    padding-bottom: 2px;
+  }
+  .nav-links a::after{
+    content:"";
+    position:absolute; left:0; right:0; bottom:-3px;
+    height: 1.5px;
+    background: var(--color-accent);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform .25s ease;
+  }
+  .nav-links a:hover{ color: var(--color-fg); }
+  .nav-links a:hover::after{ transform: scaleX(1); }
+  .nav-actions{ display:flex; align-items:center; gap: 10px; }
+  .nav-burger{ display:none; }
+
+  @media (max-width: 860px){
+    .nav-links{ display:none; }
+    .nav-burger{
+      display:inline-flex; align-items:center; justify-content:center;
+      width: 38px; height: 38px; border-radius:8px;
+      border:1px solid var(--color-border); background: var(--color-surface);
+    }
+  }
+
+  /* ---------- hero ---------- */
+  .hero{
+    padding: 88px 0 70px;
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 56px;
+    align-items: center;
+  }
+  @media (max-width: 980px){
+    .hero{ grid-template-columns: 1fr; padding: 56px 0 40px; }
+  }
+
+  .hero h1{
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(40px, 5.6vw, 68px);
+    line-height: 1.03;
+    letter-spacing: -0.01em;
+    margin: 18px 0 20px;
+  }
+  .hero h1 em{
+    font-style: italic;
+    font-weight: 500;
+    color: var(--color-accent);
+  }
+  .hero p.lede{
+    font-size: 18px;
+    color: var(--color-muted);
+    max-width: 46ch;
+    margin: 0 0 30px;
+  }
+  .hero-ctas{ display:flex; gap: 12px; flex-wrap: wrap; align-items:center; }
+  .hero-stat{
+    margin-top: 26px;
+    display:flex; align-items:center; gap: 10px;
+    font-size: 13.5px; color: var(--color-muted);
+  }
+  .hero-stat b{
+    font-family: var(--font-mono);
+    color: var(--color-fg);
+    font-weight: 600;
+  }
+
+  /* ---------- signature visual: syllabus -> live cards ---------- */
+  .signature{
+    position: relative;
+    height: 460px;
+  }
+  .doc{
+    position: absolute;
+    left: 0; top: 20px;
+    width: 62%;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    box-shadow: var(--shadow-card);
+    padding: 26px 24px;
+    overflow: hidden;
+  }
+  .doc-badge{
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--color-muted);
+    margin-bottom: 14px;
+  }
+  .doc-line{
+    height: 9px;
+    border-radius: 4px;
+    background: var(--color-border);
+    margin-bottom: 10px;
+  }
+  .doc-line.w-100{ width: 100%; }
+  .doc-line.w-90{ width: 90%; }
+  .doc-line.w-75{ width: 75%; }
+  .doc-line.w-60{ width: 60%; }
+  .doc-line.w-40{ width: 40%; }
+  .doc-line.title{ height: 13px; width: 68%; background: color-mix(in oklab, var(--color-fg) 20%, var(--color-border)); margin-bottom: 18px; }
+  .doc-spacer{ height: 16px; }
+
+  .scanline{
+    position: absolute;
+    left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+    box-shadow: 0 0 16px 2px color-mix(in oklab, var(--color-accent) 55%, transparent);
+    animation: scan 5s ease-in-out infinite;
+    opacity: .9;
+  }
+  @keyframes scan{
+    0%   { top: 4%; opacity: 0; }
+    8%   { opacity: 1; }
+    48%  { top: 92%; opacity: 1; }
+    56%  { opacity: 0; }
+    100% { top: 92%; opacity: 0; }
+  }
+
+  .chip{
+    position: absolute;
+    right: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    box-shadow: var(--shadow-card);
+    padding: 12px 14px;
+    width: 250px;
+    opacity: 0;
+    transform: translateX(14px);
+    animation: chipIn 5s ease-in-out infinite;
+  }
+  .chip .chip-label{
+    font-size: 11px; color: var(--color-muted);
+    text-transform: uppercase; letter-spacing: .06em;
+    margin-bottom: 4px;
+  }
+  .chip .chip-value{
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 17px;
+  }
+  .chip.c1{ top: 4%; border-left: 3px solid var(--color-accent); animation-delay: .3s; }
+  .chip.c2{ top: 38%; border-left: 3px solid var(--course-blue); animation-delay: 1.5s; }
+  .chip.c3{ top: 72%; border-left: 3px solid var(--course-green); animation-delay: 2.7s; }
+
+  @keyframes chipIn{
+    0%   { opacity: 0; transform: translateX(14px); }
+    10%  { opacity: 1; transform: translateX(0); }
+    82%  { opacity: 1; transform: translateX(0); }
+    92%  { opacity: 0; transform: translateX(14px); }
+    100% { opacity: 0; transform: translateX(14px); }
+  }
+
+  @media (max-width: 980px){
+    .signature{ height: 380px; margin-top: 8px; }
+    .doc{ width: 58%; padding: 20px 18px; }
+    .chip{ width: 200px; padding: 10px 12px; }
+  }
+  @media (max-width: 560px){
+    .signature{ height: 340px; }
+    .doc{ width: 54%; }
+    .chip{ width: 168px; }
+    .chip .chip-value{ font-size: 14px; }
+  }
+
+  /* ---------- section shell ---------- */
+  section{ padding: 84px 0; }
+  .section-head{ max-width: 640px; margin-bottom: 48px; }
+  .section-head h2{
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(28px, 3.4vw, 38px);
+    letter-spacing: -0.01em;
+    margin: 14px 0 14px;
+  }
+  .section-head p{
+    color: var(--color-muted);
+    font-size: 16.5px;
+    margin: 0;
+  }
+  hr.rule{
+    border: none;
+    border-top: 1px solid var(--color-border);
+    margin: 0;
+  }
+
+  /* ---------- positioning grid ---------- */
+  .compare-grid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+  @media (max-width: 760px){ .compare-grid{ grid-template-columns: 1fr; } }
+  .compare-card{
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-left: 3px solid var(--color-accent);
+    border-radius: 12px;
+    padding: 24px 26px;
+    transition: box-shadow .2s ease, transform .2s ease;
+  }
+  .compare-card:hover{
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
+  }
+  .compare-card .versus{
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--color-muted);
+    margin-bottom: 8px;
+  }
+  .compare-card h3{
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 17px;
+    margin: 0 0 8px;
+  }
+  .compare-card p{
+    margin: 0;
+    color: var(--color-muted);
+    font-size: 14.5px;
+  }
+
+  /* ---------- screenshots ---------- */
+  .showcase-row{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 56px;
+    align-items: center;
+    margin-bottom: 76px;
+  }
+  .showcase-row:last-child{ margin-bottom: 0; }
+  .showcase-row.reverse .showcase-copy{ order: 2; }
+  @media (max-width: 900px){
+    .showcase-row, .showcase-row.reverse{ grid-template-columns: 1fr; }
+    .showcase-row.reverse .showcase-copy{ order: 0; }
+  }
+  .frame{
+    border-radius: 14px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    transition: box-shadow .25s ease, transform .25s ease;
+  }
+  .frame:hover{ box-shadow: var(--shadow-card-hover); transform: translateY(-3px); }
+  .frame-bar{
+    display:flex; align-items:center; gap:6px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .frame-bar span{
+    width:9px; height:9px; border-radius:999px;
+    background: var(--color-border);
+  }
+  .frame img{ display:block; width:100%; height:auto; }
+
+  .showcase-copy .tag{
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--color-accent);
+    margin-bottom: 10px;
+    display:block;
+  }
+  .showcase-copy h3{
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 26px;
+    margin: 0 0 12px;
+  }
+  .showcase-copy p{
+    color: var(--color-muted);
+    font-size: 15.5px;
+    max-width: 44ch;
+  }
+
+  /* ---------- philosophy ---------- */
+  .philosophy{
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+  }
+  .not-chatbot{
+    display:inline-block;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 500;
+    color: var(--color-accent);
+  }
+  .phil-grid{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 26px;
+    margin-top: 42px;
+  }
+  @media (max-width: 860px){ .phil-grid{ grid-template-columns: 1fr; } }
+  .phil-card{
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 26px;
+    background: var(--color-bg);
+    transition: box-shadow .2s ease, transform .2s ease;
+  }
+  .phil-card:hover{ box-shadow: var(--shadow-card-hover); transform: translateY(-2px); }
+  .phil-card .phil-index{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--color-muted);
+    margin-bottom: 12px;
+  }
+  .phil-card h3{
+    font-family: var(--font-body);
+    font-size: 17px;
+    font-weight: 600;
+    margin: 0 0 10px;
+  }
+  .phil-card p{
+    margin:0;
+    color: var(--color-muted);
+    font-size: 14.5px;
+  }
+  .phil-note{
+    margin-top: 30px;
+    padding: 20px 22px;
+    border-radius: 12px;
+    border: 1px dashed var(--color-border);
+    color: var(--color-muted);
+    font-size: 14.5px;
+    max-width: 74ch;
+  }
+
+  /* ---------- features ---------- */
+  .feature-grid{
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+  }
+  @media (max-width: 980px){ .feature-grid{ grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px){ .feature-grid{ grid-template-columns: 1fr; } }
+  .feature-card{
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 14px;
+    padding: 24px 22px;
+    transition: box-shadow .2s ease, transform .2s ease, border-color .2s ease;
+  }
+  .feature-card:hover{
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-3px);
+    border-color: color-mix(in oklab, var(--color-accent) 40%, var(--color-border));
+  }
+  .feature-icon{
+    width: 38px; height: 38px;
+    border-radius: 9px;
+    background: color-mix(in oklab, var(--color-accent) 12%, var(--color-surface));
+    display:flex; align-items:center; justify-content:center;
+    color: var(--color-accent);
+    margin-bottom: 16px;
+  }
+  .feature-card h3{
+    font-size: 16px; font-weight: 600;
+    margin: 0 0 8px;
+  }
+  .feature-card p{
+    margin:0; color: var(--color-muted); font-size: 14px;
+  }
+
+  /* ---------- closing cta ---------- */
+  .closing{
+    text-align:center;
+    padding: 96px 0;
+  }
+  .closing h2{
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(30px, 4.4vw, 46px);
+    margin: 0 0 16px;
+  }
+  .closing p{
+    color: var(--color-muted);
+    font-size: 16.5px;
+    max-width: 50ch;
+    margin: 0 auto 32px;
+  }
+  .closing-ctas{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+
+  /* ---------- footer ---------- */
+  footer{
+    border-top: 1px solid var(--color-border);
+    padding: 48px 0 32px;
+  }
+  .footer-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap: 40px;
+    flex-wrap: wrap;
+    margin-bottom: 36px;
+  }
+  .footer-tag{
+    color: var(--color-muted);
+    font-size: 14px;
+    max-width: 32ch;
+    margin-top: 10px;
+  }
+  .footer-links{ display:flex; gap: 56px; flex-wrap:wrap; }
+  .footer-col h4{
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--color-muted);
+    margin: 0 0 12px;
+    font-weight: 600;
+  }
+  .footer-col ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:9px; }
+  .footer-col a{ text-decoration:none; font-size: 14px; color: var(--color-fg); }
+  .footer-col a:hover{ color: var(--color-accent); }
+  .footer-bottom{
+    display:flex; justify-content:space-between; align-items:center;
+    flex-wrap: wrap; gap: 12px;
+    padding-top: 24px;
+    border-top: 1px solid var(--color-border);
+    font-size: 12.5px;
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+  }
+
+  /* modal (login/signup placeholder — not wired) */
+</style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <a href="#top" class="logo"><img class="logo-mark" src="vivifilogo.png" alt="" width="22" height="22" />Vivifi</a>
+    <ul class="nav-links">
+      <li><a href="#positioning">Product</a></li>
+      <li><a href="#screens">Screens</a></li>
+      <li><a href="#philosophy">Philosophy</a></li>
+      <li><a href="#features">Features</a></li>
+    </ul>
+    <div class="nav-actions">
+      <a href="login" class="btn btn-ghost btn-sm">Log in</a>
+      <a href="register" class="btn btn-primary btn-sm">Sign up</a>
+    </div>
+    <button class="nav-burger" aria-label="Menu">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 4.5H16M2 9H16M2 13.5H16" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+    </button>
+  </nav>
+</header>
+
+<main id="top">
+
+  <!-- ================= HERO ================= -->
+  <section class="hero wrap">
+    <div>
+      <span class="eyebrow">A live view of your semester</span>
+      <h1>Your syllabus,<br><em>alive.</em></h1>
+      <p class="lede">The syllabus you were handed in week one doesn't move. <strong>Your semester does.</strong> Vivifi turns the PDF you already have into a live gradebook, a real calendar, and an office-hours directory &mdash; so you stop re-reading page four to remember how something was weighted.</p>
+      <div class="hero-ctas">
+        <a href="register" class="btn btn-primary">Get started</a>
+        <a href="#positioning" class="btn btn-ghost">See how it works</a>
+      </div>
+      <div class="hero-stat">
+        <span class="pill">PDF → set up in <b>&lt; 3 min</b></span>
+      </div>
+    </div>
+
+    <div class="signature" aria-hidden="true">
+      <div class="doc">
+        <div class="doc-badge">SYLLABUS.PDF — 85-150</div>
+        <div class="doc-line title"></div>
+        <div class="doc-line w-100"></div>
+        <div class="doc-line w-90"></div>
+        <div class="doc-line w-75"></div>
+        <div class="doc-spacer"></div>
+        <div class="doc-line w-60"></div>
+        <div class="doc-line w-100"></div>
+        <div class="doc-line w-40"></div>
+        <div class="doc-spacer"></div>
+        <div class="doc-line w-90"></div>
+        <div class="doc-line w-75"></div>
+        <div class="scanline"></div>
+      </div>
+      <div class="chip c1">
+        <div class="chip-label">Current grade</div>
+        <div class="chip-value">91.2% A-</div>
+      </div>
+      <div class="chip c2">
+        <div class="chip-label">Next due</div>
+        <div class="chip-value">Problem Set 4</div>
+      </div>
+      <div class="chip c3">
+        <div class="chip-label">Office hours</div>
+        <div class="chip-value">Tue 2:00–4:00 PT</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= POSITIONING ================= -->
+  <section id="positioning" class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">Where Vivifi fits</span>
+      <h2>It doesn't replace your tools. It replaces the busywork.</h2>
+      <p>Vivifi isn't a Canvas competitor or a scheduling app. It's a layer on top of the one document that already has everything in it &mdash; if only it could talk back.</p>
+    </div>
+    <div class="compare-grid">
+      <div class="compare-card reveal">
+        <div class="versus">vs. Canvas &amp; Blackboard</div>
+        <h3>Those update on your professor's schedule.</h3>
+        <p>Which is often never. Vivifi updates on yours &mdash; it's the student's tool, not the instructor's.</p>
+      </div>
+      <div class="compare-card reveal reveal-delay-1">
+        <div class="versus">vs. Google Calendar</div>
+        <h3>A calendar knows dates. Not what they're worth.</h3>
+        <p>It won't tell you that Thursday is worth 25% of your grade, or that your lowest homework already got dropped.</p>
+      </div>
+      <div class="compare-card reveal reveal-delay-2">
+        <div class="versus">vs. generic grade calculators</div>
+        <h3>Those make you type in every weight by hand.</h3>
+        <p>Vivifi reads the PDF you already have and sets itself up in the time it takes to skim it once.</p>
+      </div>
+      <div class="compare-card reveal reveal-delay-3">
+        <div class="versus">vs. your Notion doc</div>
+        <h3>A container isn't a system.</h3>
+        <p>It won't compute your weighted grade, or catch the attendance policy buried in section eight.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule wrap">
+
+  <!-- ================= SCREENS ================= -->
+  <section id="screens" class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">Inside Vivifi</span>
+      <h2>See your semester, live.</h2>
+      <p>Every course, every grade, and every next-due item &mdash; kept current without you touching a spreadsheet.</p>
+    </div>
+
+    <div class="showcase-row">
+      <div class="frame reveal">
+        <div class="frame-bar"><span></span><span></span><span></span></div>
+        <img src="courses.png" alt="">
+      </div>
+      <div class="showcase-copy reveal reveal-delay-1">
+        <span class="tag">Semester hub</span>
+        <h3>One dashboard, all your courses.</h3>
+        <p>A folder-style switcher moves you between semesters. Each course card shows its live grade the moment you've entered one &mdash; and a plain dash when you haven't, so nothing is ever guessed at.</p>
+      </div>
+    </div>
+
+    <div class="showcase-row reverse">
+      <div class="frame reveal">
+        <div class="frame-bar"><span></span><span></span><span></span></div>
+        <img src="gradecalc.png" alt="">
+      </div>
+      <div class="showcase-copy reveal reveal-delay-1">
+        <span class="tag">Live gradebook</span>
+        <h3>Weighted math, done for you.</h3>
+        <p>Categories, weights, and entries auto-populate from your syllabus. The query box answers "what do I need on the final to get an A?" with a number &mdash; not a conversation.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="rule wrap">
+
+  <!-- ================= PHILOSOPHY ================= -->
+  <section id="philosophy" class="philosophy">
+    <div class="wrap">
+      <div class="section-head reveal">
+        <span class="eyebrow">Our approach to AI</span>
+        <h2>AI reads the document. You keep the decisions.</h2>
+        <p>Vivifi is <span class="not-chatbot">not a chatbot</span>. There's no thread to scroll through and nothing to prompt. AI shows up in exactly three places, and in each one, it does one narrow job well &mdash; then gets out of the way.</p>
+      </div>
+      <div class="phil-grid">
+        <div class="phil-card reveal">
+          <div class="phil-index">Reading</div>
+          <h3>Review before it's real.</h3>
+          <p>Uploading a syllabus doesn't commit anything. You see every extracted field on one editable screen, fix what's wrong, and confirm it yourself. Every value keeps a record of whether it came from the syllabus or from you.</p>
+        </div>
+        <div class="phil-card reveal reveal-delay-1">
+          <div class="phil-index">Predicting</div>
+          <h3>Structured answers, never conversation.</h3>
+          <p>Ask what you need on the final in plain English. AI's only job is turning that sentence into a formal query &mdash; your grade, the actual arithmetic, is computed by ordinary code, every time, the same way.</p>
+        </div>
+        <div class="phil-card reveal reveal-delay-2">
+          <div class="phil-index">Interacting</div>
+          <h3>No chat surface, anywhere.</h3>
+          <p>No message history, no "great question," no back-and-forth to manage. Every AI touchpoint in Vivifi takes a specific input and returns a specific, structured output.</p>
+        </div>
+      </div>
+      <p class="phil-note">Language models are good at reading a messy PDF and understanding how a person phrases a question. They're not a substitute for verifiable arithmetic, or for a student's own judgment about their own coursework &mdash; so Vivifi never asks you to trust a black box for either.</p>
+    </div>
+  </section>
+
+  <!-- ================= FEATURES ================= -->
+  <section id="features" class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow">What's actually in it</span>
+      <h2>Everything your syllabus was supposed to do.</h2>
+      <p>Four systems, all driven by the same document you already have.</p>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-card reveal">
+        <div class="feature-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 2h7l3 3v11H4V2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M11 2v3h3" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M6.5 9h5M6.5 11.5h5M6.5 14h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        </div>
+        <h3>Live Syllabus</h3>
+        <p>Upload a PDF once. Vivifi extracts grade weights, assignments, exams, instructors, and office hours &mdash; you review and edit before anything is saved.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-1">
+        <div class="feature-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 15V8M8.5 15V4M14 15v-6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        </div>
+        <h3>Live Gradebook</h3>
+        <p>Weighted math across categories, auto-populated from your assignments plus room for attendance and extra credit. Ask what you need &mdash; get a number back.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-2">
+        <div class="feature-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2.5" y="3.5" width="13" height="12" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M2.5 7h13M6 2v2.5M12 2v2.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </div>
+        <h3>Assignment &amp; Exam Tracker</h3>
+        <p>Drag any assignment to reschedule it. Exams stay fixed &mdash; your professor set that date, not you. Marking something done never touches its grade.</p>
+      </div>
+      <div class="feature-card reveal reveal-delay-3">
+        <div class="feature-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="6.5" cy="6" r="2.4" stroke="currentColor" stroke-width="1.3"/><circle cx="12.5" cy="6" r="2" stroke="currentColor" stroke-width="1.3"/><path d="M2.5 15c0-2.5 1.8-4 4-4s4 1.5 4 4M11 11.3c1.7.15 3 1.5 3 3.7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        </div>
+        <h3>Instructors &amp; Office Hours</h3>
+        <p>Every professor, TA, and learning assistant listed with their own hours, email, and link &mdash; filterable, so you can see who's holding hours right now.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CLOSING CTA ================= -->
+  <section class="closing wrap">
+    <span class="eyebrow" style="margin-bottom:14px;">Ready when your next syllabus is</span>
+    <h2 class="reveal">Stop re-reading page four.</h2>
+    <p class="reveal reveal-delay-1">Upload a syllabus and see your semester as it actually stands &mdash; not as it stood in week one.</p>
+    <div class="closing-ctas reveal reveal-delay-2">
+      <a href="register" class="btn btn-primary">Get started free</a>
+      <a href="login" class="btn btn-ghost">Log in</a>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-top">
+      <div>
+        <a href="#top" class="logo"><img class="logo-mark" src="vivifilogo.png" alt="" width="22" height="22" />Vivifi</a>
+        <p class="footer-tag">A live view of your semester, built from the syllabus you already have.</p>
+      </div>
+      <div class="footer-links">
+        <div class="footer-col">
+          <h4>Product</h4>
+          <ul>
+            <li><a href="#positioning">Positioning</a></li>
+            <li><a href="#screens">Screens</a></li>
+            <li><a href="#features">Features</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Approach</h4>
+          <ul>
+            <li><a href="#philosophy">AI philosophy</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h4>Account</h4>
+          <ul>
+            <li><a href="login">Log in</a></li>
+            <li><a href="register">Sign up</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 Vivifi, website built with assistance from Claude Sonnet 5</span>
+      <span>Built for Stellic's Pathfinder's Challenge 2026</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Reveal-on-scroll
+  (function(){
+    var els = document.querySelectorAll('.reveal');
+    if(!('IntersectionObserver' in window)){
+      els.forEach(function(el){ el.classList.add('is-visible'); });
+      return;
+    }
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if(entry.isIntersecting){
+          entry.target.classList.add('is-visible');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+    els.forEach(function(el){ io.observe(el); });
+  })();
+
+  // Mobile nav (simple toggle -> reveals link list beneath bar)
+  (function(){
+    var burger = document.querySelector('.nav-burger');
+    var links = document.querySelector('.nav-links');
+    if(!burger || !links) return;
+    burger.addEventListener('click', function(){
+      var open = links.style.display === 'flex';
+      links.style.cssText = open ? '' : 'display:flex; position:absolute; top:100%; left:0; right:0; background:var(--color-bg); border-bottom:1px solid var(--color-border); flex-direction:column; padding:18px 32px; gap:16px;';
+    });
+  })();
+</script>
+
+</body>
+</html>

@@ -38,7 +38,7 @@ export default function LoginPage() {
     try {
       const { access_token, user } = await login({ identifier, password });
       signIn(access_token, user);
-      navigate("/", { replace: true });
+      navigate("/home", { replace: true });
     } catch (err) {
       setError(err instanceof ApiError ? err.detail : "Something went wrong.");
     } finally {

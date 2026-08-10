@@ -36,7 +36,7 @@ export default function SemesterSetupPage() {
         end_date: endDate || null,
         is_active: true,
       });
-      navigate("/", { replace: true });
+      navigate("/home", { replace: true });
     } catch (err) {
       setError(err instanceof ApiError ? err.detail : "Couldn't create semester.");
     }
@@ -117,7 +117,7 @@ export default function SemesterSetupPage() {
             {error ? <p className="text-sm text-danger">{error}</p> : null}
             <div className="flex items-center justify-between pt-2">
               {semesters && semesters.length > 0 ? (
-                <Link to="/" className="text-sm text-muted hover:underline">
+                <Link to="/home" className="text-sm text-muted hover:underline">
                   Cancel
                 </Link>
               ) : (

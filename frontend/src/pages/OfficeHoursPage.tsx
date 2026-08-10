@@ -212,7 +212,7 @@ export default function OfficeHoursPage() {
 
   function handleSelectSemester(slug: string) {
     if (slug === selectedSlug) {
-      navigate("/");
+      navigate("/home");
       return;
     }
     setSelectedSlug(slug);
@@ -348,7 +348,7 @@ export default function OfficeHoursPage() {
                 title="No courses yet"
                 description="Add a course and commit its syllabus — class meetings and office hours show up here."
                 action={
-                  <Link to="/" className="btn-primary">
+                  <Link to="/home" className="btn-primary">
                     Back to semester hub
                   </Link>
                 }
@@ -387,7 +387,7 @@ export default function OfficeHoursPage() {
                       Show all hosts
                     </button>
                   ) : (
-                    <Link to="/" className="btn-primary">
+                    <Link to="/home" className="btn-primary">
                       Back to semester hub
                     </Link>
                   )

@@ -60,7 +60,7 @@ export default function CourseDetailPage() {
             <BrandMark />
             <span className="hidden text-muted sm:inline">/</span>
             <Link
-              to="/"
+              to="/home"
               className="hidden text-sm font-medium text-muted hover:text-fg sm:inline"
             >
               Semester
@@ -90,7 +90,7 @@ export default function CourseDetailPage() {
               Couldn't load that course. It may have been deleted, or the server
               is unreachable.
             </p>
-            <Link to="/" className="mt-4 inline-block text-sm text-accent hover:underline">
+            <Link to="/home" className="mt-4 inline-block text-sm text-accent hover:underline">
               Back to semester
             </Link>
           </div>

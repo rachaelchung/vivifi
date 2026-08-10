@@ -45,9 +45,18 @@ jobs:
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
         run: npm run build
 
-      - name: SPA fallback (Pages serves 404.html for unknown routes)
-        run: cp frontend/dist/index.html frontend/dist/404.html
+      # SPA boots from 404.html (Pages fallback for /login, /home, …).
+      # Overwrite index.html with the marketing landing afterward.
+      - name: Landing page + SPA fallback
         working-directory: ${{ github.workspace }}
+        run: |
+          cp frontend/dist/index.html frontend/dist/404.html
+          cp frontend/vivifi.html frontend/dist/index.html
+          # Relative logo/CTA hrefs need a <base> so they resolve under /<repo>/
+          # even when the URL has no trailing slash.
+          BASE="/${{ github.event.repository.name }}/"
+          sed -i.bak "s|<head>|<head><base href=\"${BASE}\">|" frontend/dist/index.html
+          rm -f frontend/dist/index.html.bak
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

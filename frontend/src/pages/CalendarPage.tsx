@@ -120,7 +120,7 @@ export default function CalendarPage() {
 
   function handleSelectSemester(slug: string) {
     if (slug === selectedSlug) {
-      navigate("/");
+      navigate("/home");
       return;
     }
     setSelectedSlug(slug);
@@ -305,7 +305,7 @@ export default function CalendarPage() {
                 title="No courses to show"
                 description="Add a course from the semester hub, then upload its syllabus — dated assignments and exams will show up here."
                 action={
-                  <Link to="/" className="btn-primary">
+                  <Link to="/home" className="btn-primary">
                     Back to semester hub
                   </Link>
                 }

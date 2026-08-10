@@ -111,7 +111,7 @@ export default function SyllabusReviewPage() {
     sectionsOk;
 
   if (!slug) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/home" replace />;
   }
 
   if (!extraction) {

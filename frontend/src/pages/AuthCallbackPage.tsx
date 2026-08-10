@@ -31,7 +31,7 @@ export default function AuthCallbackPage() {
         if (cancelled) return;
         signIn(token, me);
         // New Google users have no semesters yet — hub redirects to setup.
-        navigate("/", { replace: true });
+        navigate("/home", { replace: true });
       } catch (err) {
         if (cancelled) return;
         setToken(null);
