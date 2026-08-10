@@ -17,6 +17,7 @@ import {
   CourseMetaSection,
   GradingScaleSection,
   HostsSection,
+  MaterialsSection,
   NotesSection,
   OfficeHoursSection,
 } from "@/components/syllabusReview/sections";
@@ -225,6 +226,11 @@ export default function SyllabusReviewPage() {
           }
         />
 
+        <MaterialsSection
+          value={extraction.materials ?? []}
+          onChange={(materials) => setExtraction({ ...extraction, materials })}
+        />
+
         <NotesSection
           value={extraction.notes}
           onChange={(notes) => setExtraction({ ...extraction, notes })}
@@ -279,10 +285,17 @@ export default function SyllabusReviewPage() {
 // SPEC: if the extraction returned no grading scale, pre-fill the standard
 // 10-point scale on the review screen so the user can accept or edit.
 function seedDefaults(extraction: SyllabusExtraction): SyllabusExtraction {
-  if (extraction.grading_scale.length === 0) {
-    return { ...extraction, grading_scale: DEFAULT_SCALE.map((b) => ({ ...b })) };
+  const withMaterials: SyllabusExtraction = {
+    ...extraction,
+    materials: extraction.materials ?? [],
+  };
+  if (withMaterials.grading_scale.length === 0) {
+    return {
+      ...withMaterials,
+      grading_scale: DEFAULT_SCALE.map((b) => ({ ...b })),
+    };
   }
-  return extraction;
+  return withMaterials;
 }
 
 function Banner({

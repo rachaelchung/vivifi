@@ -11,6 +11,7 @@ from app.routers import (
     grade,
     gradebook,
     grading_scale,
+    materials,
     notes,
     office_hours,
     semesters,
@@ -50,6 +51,7 @@ app.include_router(gradebook.router)
 app.include_router(office_hours.hosts_router)
 app.include_router(office_hours.hours_router)
 app.include_router(notes.router)
+app.include_router(materials.router)
 app.include_router(grade.router)
 
 

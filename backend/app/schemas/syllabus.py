@@ -127,6 +127,32 @@ class ExtractedNote(BaseModel):
     body: str = Field(min_length=1)
 
 
+MaterialKind = Literal["textbook", "book", "other"]
+MaterialRequirement = Literal["required", "recommended"]
+
+
+class ExtractedMaterial(BaseModel):
+    kind: MaterialKind = "textbook"
+    title: str = Field(min_length=1, max_length=300)
+    authors: str | None = Field(default=None, max_length=500)
+    edition: str | None = Field(default=None, max_length=120)
+    isbn: str | None = Field(default=None, max_length=32)
+    publisher: str | None = Field(default=None, max_length=200)
+    year: int | None = Field(default=None, ge=1000, le=2100)
+    url: str | None = Field(default=None, max_length=500)
+    requirement: MaterialRequirement = "required"
+    notes: str | None = None
+
+    @field_validator(
+        "authors", "edition", "isbn", "publisher", "url", "notes", mode="before"
+    )
+    @classmethod
+    def _empty_to_none(cls, v: object) -> object:
+        if isinstance(v, str) and not v.strip():
+            return None
+        return v
+
+
 class SyllabusExtraction(BaseModel):
     """Full extraction / commit payload. See SPEC §Syllabus Ingestion Pipeline."""
 
@@ -137,6 +163,7 @@ class SyllabusExtraction(BaseModel):
     office_hour_hosts: list[ExtractedOfficeHourHost] = Field(default_factory=list)
     office_hours: list[ExtractedOfficeHour] = Field(default_factory=list)
     class_meetings: list[ExtractedClassMeeting] = Field(default_factory=list)
+    materials: list[ExtractedMaterial] = Field(default_factory=list)
     notes: list[ExtractedNote] = Field(default_factory=list)
 
 

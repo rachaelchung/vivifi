@@ -5,6 +5,9 @@ import type {
   Assignment,
   AssignmentCreatePayload,
   AssignmentUpdatePayload,
+  CourseMaterial,
+  CourseMaterialCreatePayload,
+  CourseMaterialUpdatePayload,
   CourseNote,
   CourseNoteCreatePayload,
   CourseNoteUpdatePayload,
@@ -46,6 +49,7 @@ const entriesKey = (slug: string) => ["gradebook-entries", slug] as const;
 const hostsKey = (slug: string) => ["office-hour-hosts", slug] as const;
 const hoursKey = (slug: string) => ["office-hours", slug] as const;
 const notesKey = (slug: string) => ["notes", slug] as const;
+const materialsKey = (slug: string) => ["materials", slug] as const;
 const gradeKey = (slug: string) => ["grade", slug] as const;
 
 // After any grade-affecting mutation, invalidate the queries that depend
@@ -405,6 +409,57 @@ export function useDeleteNote(slug: string) {
     mutationFn: (id: number) =>
       apiRequest<void>(`/courses/${slug}/notes/${id}`, { method: "DELETE" }),
     onSuccess: () => qc.invalidateQueries({ queryKey: notesKey(slug) }),
+  });
+}
+
+// --- materials ------------------------------------------------------------
+
+export function useMaterials(slug: string | null) {
+  return useQuery({
+    queryKey: materialsKey(slug ?? ""),
+    queryFn: () => apiRequest<CourseMaterial[]>(`/courses/${slug}/materials`),
+    enabled: !!slug,
+  });
+}
+
+export function useCreateMaterial(slug: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CourseMaterialCreatePayload) =>
+      apiRequest<CourseMaterial>(`/courses/${slug}/materials`, {
+        method: "POST",
+        body: payload,
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: materialsKey(slug) }),
+  });
+}
+
+export function useUpdateMaterial(slug: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: number;
+      payload: CourseMaterialUpdatePayload;
+    }) =>
+      apiRequest<CourseMaterial>(`/courses/${slug}/materials/${id}`, {
+        method: "PATCH",
+        body: payload,
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: materialsKey(slug) }),
+  });
+}
+
+export function useDeleteMaterial(slug: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiRequest<void>(`/courses/${slug}/materials/${id}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: materialsKey(slug) }),
   });
 }
 

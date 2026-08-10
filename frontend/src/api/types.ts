@@ -133,6 +133,22 @@ export interface ExtractedNote {
   body: string;
 }
 
+export type MaterialKind = "textbook" | "book" | "other";
+export type MaterialRequirement = "required" | "recommended";
+
+export interface ExtractedMaterial {
+  kind: MaterialKind;
+  title: string;
+  authors: string | null;
+  edition: string | null;
+  isbn: string | null;
+  publisher: string | null;
+  year: number | null;
+  url: string | null;
+  requirement: MaterialRequirement;
+  notes: string | null;
+}
+
 export interface SyllabusExtraction {
   course: ExtractedCourseMeta;
   grade_categories: ExtractedGradeCategory[];
@@ -141,6 +157,7 @@ export interface SyllabusExtraction {
   office_hour_hosts: ExtractedOfficeHourHost[];
   office_hours: ExtractedOfficeHour[];
   class_meetings: ExtractedClassMeeting[];
+  materials: ExtractedMaterial[];
   notes: ExtractedNote[];
 }
 
@@ -305,6 +322,49 @@ export interface CourseNoteCreatePayload {
 export interface CourseNoteUpdatePayload {
   heading?: string;
   body?: string;
+}
+
+export interface CourseMaterial {
+  id: number;
+  kind: MaterialKind;
+  title: string;
+  authors: string | null;
+  edition: string | null;
+  isbn: string | null;
+  publisher: string | null;
+  year: number | null;
+  url: string | null;
+  requirement: MaterialRequirement;
+  notes: string | null;
+  source: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CourseMaterialCreatePayload {
+  kind?: MaterialKind;
+  title: string;
+  authors?: string | null;
+  edition?: string | null;
+  isbn?: string | null;
+  publisher?: string | null;
+  year?: number | null;
+  url?: string | null;
+  requirement?: MaterialRequirement;
+  notes?: string | null;
+}
+
+export interface CourseMaterialUpdatePayload {
+  kind?: MaterialKind;
+  title?: string;
+  authors?: string | null;
+  edition?: string | null;
+  isbn?: string | null;
+  publisher?: string | null;
+  year?: number | null;
+  url?: string | null;
+  requirement?: MaterialRequirement;
+  notes?: string | null;
 }
 
 // Current-grade + prediction

@@ -19,7 +19,8 @@ The differentiator: **the syllabus is the primary interface.** Grades, calendar,
 
 ## Core Features
 
-- **Live Syllabus** — Upload a PDF syllabus once at the start of the term; Claude extracts course info, grade categories with weights, the grading scale, assignments and exams with due dates, instructors and their office hours, class meeting times, and any course-specific notes worth surfacing. You review, edit, and confirm before anything commits.
+- **Live Syllabus** — Upload a PDF syllabus once at the start of the term; Claude extracts course info, grade categories with weights, the grading scale, assignments and exams with due dates, instructors and their office hours, class meeting times, materials (textbooks / books / other), and any course-specific notes worth surfacing. You review, edit, and confirm before anything commits.
+- **Materials** — Textbooks, readings, and supplies as structured rows (`textbook` | `book` | `other`), each marked required or recommended. Shown as scannable cards on an always-on Materials tab — not a bibliography wall of text.
 - **Live Gradebook** — Weighted grade math across categories (e.g. Homework 20%, Midterm 25%, Final 30%), including `drop_lowest_n` when the syllabus says so. Auto-populated from your syllabus assignments, plus room for manual entries (attendance, participation, extra credit). A dedicated query box answers "what do I need on the final to get an A?" with a number, not a chat.
 - **Assignment + Exam Tracker** — A task-focused view separate from the gradebook: what's due, when, whether you've done it. Drag-and-drop on any calendar view reschedules an assignment; exams render distinctively and are non-draggable (profs set them). Marking an assignment "done" is fully independent of entering its grade.
 - **Instructors & Office Hours** — Each prof, TA, and learning assistant is a first-class entity with their own hours, email, and Zoom link. Per-course grid on the Instructors tab; consolidated **Office Hour Week** across all courses, colored by course and filterable by host, with a live now-line.
@@ -54,15 +55,15 @@ The Assignments tab and the Gradebook tab are **independent views** that share i
 | Login | Email/password or Google OAuth. New users are routed into Semester Setup. |
 | Semester Setup | First-run only, and reachable later via "+ New Semester" from the switcher. A single form asks for a semester name (e.g. `"Fall 2025"`, `"F25"`, `"Spring"`) and optional start/end dates. Dates are used only as extraction context (for expanding recurring assignments) and as a hint for the calendar — not enforced. Submit → land on an empty Semester Hub for that semester. |
 | Semester Hub | Main screen. A **folder-style tab semester switcher** at the top (past semesters remain readable, the active one is marked) lets you move between semesters seamlessly. Below it: a dashboard of course cards for the active semester, plus a "+ Add course" tile. If no courses exist yet, that tile is the only card. Adding a new semester is a menu item on the switcher; nothing prompts you to make one — you make one when you need one. |
-| Syllabus Review | After a PDF upload, an editable table of everything Claude extracted (course meta, grade categories, grading scale, assignments and exams, instructor roster, office hours, class meeting times, course notes). Nothing is persisted until the user confirms. If extraction looks incomplete (e.g. no assignments found, or the syllabus appears to be a scan), shows a banner suggesting the paste-text alternative flow. |
-| Course Detail | Tabs: **Gradebook** (graded entries grouped by category, plus the prediction query box), **Assignments** (schedule/task list with `source` visible and `kind` badged; `completed` is per-row), **Instructors** (per-course host directory + weekly hours grid), **Notes** *(conditional — appears only when Claude extracted at least one course-specific note)*. |
+| Syllabus Review | After a PDF upload, an editable table of everything Claude extracted (course meta, grade categories, grading scale, assignments and exams, instructor roster, office hours, class meeting times, materials, course notes). Nothing is persisted until the user confirms. If extraction looks incomplete (e.g. no assignments found, or the syllabus appears to be a scan), shows a banner suggesting the paste-text alternative flow. |
+| Course Detail | Tabs: **Gradebook** (graded entries grouped by category, plus the prediction query box), **Assignments** (schedule/task list with `source` visible and `kind` badged; `completed` is per-row), **Instructors** (per-course host directory + weekly hours grid), **Materials** (always visible — empty state "No materials required" plus manual add), **Notes** *(conditional — appears only when Claude extracted at least one course-specific note)*. |
 | Calendar | All assignments and exams across courses. Toggle list / week / month. Exams render distinctively (bigger footprint, distinct shape/color) and are **not draggable**; assignments can be **rescheduled by drag-and-drop** on any view. Check off completed items inline. |
 | Office Hour Week | Consolidated weekly grid across all courses; blocks colored by course, filterable by host; live line showing current day and time. |
 | Settings | Target grades, account, sign out. |
 
 ## Data Model
 
-Hierarchy: `User -> Semester -> Course -> {GradeScaleBand, GradeCategory, Assignment, GradebookEntry, OfficeHourHost, OfficeHour, ClassMeeting, CourseNote}`. Everything is scoped to the authenticated user.
+Hierarchy: `User -> Semester -> Course -> {GradeScaleBand, GradeCategory, Assignment, GradebookEntry, OfficeHourHost, OfficeHour, ClassMeeting, CourseMaterial, CourseNote}`. Everything is scoped to the authenticated user.
 
 **Timestamp and timezone convention.** All timestamps (`created_at`, `updated_at`) and all timezone-aware datetimes are stored in **UTC**. Wall-clock date/time fields that belong to a course (`Assignment.due_date`, `OfficeHour.start_time`/`end_time`, `ClassMeeting.start_time`/`end_time`) are rendered in the **course's timezone** (see `Course.timezone`), suffixed with an abbreviated zone label (e.g. `"11:59 PM ET"`, `"2:00 PM PT"`). There is no user-level timezone preference in MVP — the course's timezone is the display truth, which matches how students think about class schedules ("class is at 2pm ET because the school is in Pittsburgh").
 
@@ -79,7 +80,7 @@ Hierarchy: `User -> Semester -> Course -> {GradeScaleBand, GradeCategory, Assign
 
 **Course**
 - `id`, `semester_id`, `name`, `code` (e.g. `"15-113"`, `"MAT 100"`), `instructor_name`, `instructor_email` (nullable), `color` (hex, for calendar/gradebook accents), `target_grade` (may be numeric like `90` or a letter like `"A"` — resolved against the course's grading scale), `timezone` (IANA name like `"America/New_York"`; used to render all wall-clock times owned by this course)
-- Has many `GradeScaleBand`, `GradeCategory`, `Assignment`, `GradebookEntry`, `OfficeHourHost`, `OfficeHour`, `ClassMeeting`, `CourseNote`.
+- Has many `GradeScaleBand`, `GradeCategory`, `Assignment`, `GradebookEntry`, `OfficeHourHost`, `OfficeHour`, `ClassMeeting`, `CourseMaterial`, `CourseNote`.
 - `timezone` defaults to the browser's detected timezone at course-creation time; user can override in the course settings if the school is in a different zone than they are.
 
 **GradeScaleBand** (per-course grading scale, e.g. "A = 90+, B = 80+")
@@ -133,9 +134,15 @@ Hierarchy: `User -> Semester -> Course -> {GradeScaleBand, GradeCategory, Assign
 - `id`, `course_id`, `day_of_week` (0–6, Monday = 0), `start_time`, `end_time`, `location`
 - Not required. If the syllabus lists a meeting schedule, Claude extracts it. Future features (blocking off class time on the calendar, contextualizing "office hours right after class") will read from these rows; MVP simply persists them.
 
+**CourseMaterial** (textbook, reading, or other required/recommended supply)
+- `id`, `course_id`, `kind` (`textbook | book | other`), `title`, `authors` (nullable), `edition` (nullable), `isbn` (nullable), `publisher` (nullable), `year` (nullable int), `url` (nullable), `requirement` (`required | recommended`), `notes` (nullable), `source` (`syllabus | manual`), `created_at`, `updated_at`
+- **Kinds:** `textbook` — primary course text (fill bibliographic fields when present); `book` — other readings (title + authors; edition/version details go in `notes`); `other` — non-book items (calculator, kit, software) with the name in `title`.
+- **Requirement** defaults to `required` when the syllabus is silent or ambiguous.
+- Materials are extracted into a dedicated array — never stuffed into `CourseNote`. The Materials tab is always visible; empty state reads "No materials required" with a manual-add affordance.
+
 **CourseNote** (course-specific policy or expectation worth surfacing to the student)
 - `id`, `course_id`, `heading`, `body`, `source` (`syllabus | manual`), `created_at`, `updated_at`
-- Populated during syllabus ingestion, but **only** when Claude identifies course-specific content. Generic university boilerplate (Title IX, general academic integrity, disability accommodations, drop deadlines, generic grading-appeal process) is filtered out at extraction time. See **Syllabus Ingestion Pipeline**. If no notes are kept, the Course Detail screen renders no Notes tab.
+- Populated during syllabus ingestion, but **only** when Claude identifies course-specific content. Generic university boilerplate (Title IX, general academic integrity, disability accommodations, drop deadlines, generic grading-appeal process) is filtered out at extraction time. Do **not** put textbooks or supply lists here — those are `CourseMaterial`. See **Syllabus Ingestion Pipeline**. If no notes are kept, the Course Detail screen renders no Notes tab.
 
 ## Syllabus Ingestion Pipeline
 
@@ -192,6 +199,20 @@ The single most important flow. Four steps:
          "location": "string"
        }
      ],
+     "materials": [
+       {
+         "kind": "textbook | book | other",
+         "title": "string",
+         "authors": "string | null",
+         "edition": "string | null",
+         "isbn": "string | null",
+         "publisher": "string | null",
+         "year": "number | null",
+         "url": "string | null",
+         "requirement": "required | recommended",
+         "notes": "string | null"
+       }
+     ],
      "notes": [
        { "heading": "string", "body": "string" }
      ]
@@ -201,6 +222,7 @@ The single most important flow. Four steps:
 4. **Review & commit.** The Syllabus Review screen renders the extraction as editable tables. The user fixes anything wrong, then confirms. On commit:
    - Each `assignments` row creates **both** an `Assignment` (for the Assignments tab and Calendar) **and** a linked `GradebookEntry` (for the Gradebook tab, with `source_assignment_id` pointing back to the Assignment and `category_id` resolved from the `category_name`). Both rows are marked `source = "syllabus"`.
    - `host_name` in each `office_hours` entry resolves to a `host_id` by name-matching against the just-created `office_hour_hosts`.
+   - Each `materials` row creates a `CourseMaterial` with `source = "syllabus"`.
    - Raw syllabus text is discarded after successful commit.
 
 **Prompt rules Claude must follow:**
@@ -209,7 +231,8 @@ The single most important flow. Four steps:
 - **Expand recurring assignments.** If the syllabus specifies a recurring item ("weekly reading responses due every Sunday", "biweekly problem sets on Fridays") and the semester's `start_date` and `end_date` are provided, Claude expands the range into concrete-dated rows (e.g. 14 rows for a weekly item over 14 weeks, each with the same `points_possible` and `category_name`). If semester dates are missing, Claude returns a single row with `due_date: null` and a name that hints at the recurrence (e.g. `"Weekly reading response (recurring — set dates manually)"`), so the user knows to expand or backfill later.
 - **Default category fallback.** If the syllabus states no grade weightings at all (some do — "based on effort, quizzes, and participation" without percentages), Claude returns `grade_categories: [{ "name": "Overall", "weight_pct": 100, "drop_lowest_n": 0 }]` and puts every assignment's `category_name` as `"Overall"`. The user can restructure on the review screen.
 - For `office_hours.location`, preserve whatever the syllabus states verbatim: a room (`"GHC 5219"`), a Zoom URL (`"https://cmu.zoom.us/j/12345"`), or a hybrid (`"GHC 5219 + zoom.us/j/12345"`). Do not paraphrase or shorten URLs. If a host has a persistent personal Zoom room mentioned once alongside their name, put that URL on the `OfficeHourHost.zoom_link` (populated at commit time from the host roster context) rather than repeating it on every block.
-- For `notes`, **skip generic university boilerplate**: Title IX statements, generic academic integrity language, disability accommodations sections, drop/withdraw deadlines, generic grading-appeal procedures, and other content that would appear identically across most syllabi at the school. **Only include course-specific content** the instructor is emphasizing: unusual late-work policy, particular attendance rules, laptop/phone rules, communication expectations, unique exam structure, required non-textbook materials, etc. If nothing course-specific is worth surfacing, return `"notes": []`.
+- For `materials`, extract structured rows — never dump bibliography prose into `notes`. Use `kind` `textbook` for primary course texts (fill edition/ISBN/publisher/year/url when present), `book` for other readings (title + authors; versions in `notes`), `other` for non-book supplies (name in `title`). Default `requirement` to `"required"` when unclear.
+- For `notes`, **skip generic university boilerplate**: Title IX statements, generic academic integrity language, disability accommodations sections, drop/withdraw deadlines, generic grading-appeal procedures, and other content that would appear identically across most syllabi at the school. **Only include course-specific content** the instructor is emphasizing: unusual late-work policy, particular attendance rules, laptop/phone rules, communication expectations, unique exam structure, etc. Do **not** put textbooks or supply lists in `notes`. If nothing course-specific is worth surfacing, return `"notes": []`.
 - All output text is in **English**. If the syllabus is in another language, translate values to English while preserving proper nouns, room codes, URLs, and course codes verbatim.
 
 **Validation and messaging at review:**
@@ -281,6 +304,7 @@ Python FastAPI backend. Claude is called **only from the backend** so the Anthro
 - `GET/POST /courses/{id}/office-hours`, `PATCH/DELETE /office-hours/{id}`
 - `GET/POST /courses/{id}/class-meetings`, `PATCH/DELETE /class-meetings/{id}`
 - `GET/POST /courses/{id}/notes`, `PATCH/DELETE /notes/{id}`
+- `GET/POST /courses/{id}/materials`, `PATCH/DELETE /materials/{id}`
 - `POST /courses/{id}/predict` — body: `{ query: string }`; returns `{ answer: number | scenarios[], explanation: string }`
 
 ## Privacy Note
@@ -365,16 +389,16 @@ Login is via the Render-hosted backend (email/password or Google OAuth).
 - `drop_lowest_n` support in category math
 - Calendar week and list views (with drag-and-drop on both)
 - Consolidated Office Hour Week view (cross-course grid, host filter, live now-line)
+- Textbooks / required materials as a first-class `CourseMaterial` entity (Materials tab always on)
 
 **Stretch (remaining, in priority order):**
-1. Textbooks / required materials as a first-class entity (currently these live in `CourseNote`)
-3. User-selectable themes via CSS-variable class swap
-4. Course-level image/cover upload for the Vibe customization goal
-5. Notifications / reminders ("your midterm is tomorrow" — browser push or email)
-6. **Additional class-hour types** (recitations, labs, seminars, "MATLAB reci" and other course-specific sub-sessions). MVP folds everything into a single `ClassMeeting` entity, which loses the distinction between a normal lecture and, say, a required Friday MATLAB recitation. A future revision could add a `kind` (`lecture | recitation | lab | seminar | other`) to `ClassMeeting` so the calendar and future "class-meeting-aware" features can differentiate them. Deferred because the long tail of naming conventions ("reci", "PSO", "SI session", ...) makes fully-modeled taxonomy unbounded, and lumping into `ClassMeeting` is the least wrong default.
-7. Class meeting calendar
-8. **Drag-to-reorder semester tabs.** The folder-style switcher currently renders tabs in creation order (older on the left, newer on the right) and holds that order regardless of which semester is active. Drag-to-reorder would let students group tabs by their own logic (e.g. current semester on the far left even if it wasn't created first). Requires an `order_index` column on `Semester`, a `PUT /semesters/order` endpoint that accepts an ordered list of slugs, and HTML5 drag handlers on each tab with an optimistic-update mutation.
-9. **Paired rename prompt.** Renaming an `Assignment` does **not** propagate to its linked `GradebookEntry` (and vice versa) — intentional split-model divergence. Stretch UX: when the user renames one half of a pair that still shares a `source_assignment_id` link, offer "Rename the linked gradebook entry / assignment too?" so they can keep labels in sync without losing the option to diverge. MVP keeps independent inline renames on each tab.
+1. User-selectable themes via CSS-variable class swap
+2. Course-level image/cover upload for the Vibe customization goal
+3. Notifications / reminders ("your midterm is tomorrow" — browser push or email)
+4. **Additional class-hour types** (recitations, labs, seminars, "MATLAB reci" and other course-specific sub-sessions). MVP folds everything into a single `ClassMeeting` entity, which loses the distinction between a normal lecture and, say, a required Friday MATLAB recitation. A future revision could add a `kind` (`lecture | recitation | lab | seminar | other`) to `ClassMeeting` so the calendar and future "class-meeting-aware" features can differentiate them. Deferred because the long tail of naming conventions ("reci", "PSO", "SI session", ...) makes fully-modeled taxonomy unbounded, and lumping into `ClassMeeting` is the least wrong default.
+5. Class meeting calendar
+6. **Drag-to-reorder semester tabs.** The folder-style switcher currently renders tabs in creation order (older on the left, newer on the right) and holds that order regardless of which semester is active. Drag-to-reorder would let students group tabs by their own logic (e.g. current semester on the far left even if it wasn't created first). Requires an `order_index` column on `Semester`, a `PUT /semesters/order` endpoint that accepts an ordered list of slugs, and HTML5 drag handlers on each tab with an optimistic-update mutation.
+7. **Paired rename prompt.** Renaming an `Assignment` does **not** propagate to its linked `GradebookEntry` (and vice versa) — intentional split-model divergence. Stretch UX: when the user renames one half of a pair that still shares a `source_assignment_id` link, offer "Rename the linked gradebook entry / assignment too?" so they can keep labels in sync without losing the option to diverge. MVP keeps independent inline renames on each tab.
 
 ## Constraints & Non-Goals
 
@@ -397,6 +421,7 @@ Login is via the Render-hosted backend (email/password or Google OAuth).
 - The **Assignments** tab and the **Gradebook** tab are independent: toggling `completed` on an `Assignment` does not affect its linked `GradebookEntry`, and vice versa. Deleting a `GradebookEntry` does not delete its linked `Assignment`.
 - The user can add a manual `GradebookEntry` (e.g. "Overall attendance") in any category without creating a paired `Assignment`.
 - Drag-and-drop reschedule on any calendar view mutates the assignment's `due_date` server-side within a single `PATCH /assignments/{id}` request. Exams are rendered non-draggable and the backend rejects `due_date` changes on `kind = "exam"` rows.
+- The Course Detail **Materials** tab is always visible. Empty state reads "No materials required" and still offers manual add. Materials are never stored as `CourseNote` rows.
 - The Course Detail **Notes** tab renders only when the course has at least one `CourseNote`. If Claude extracted only generic university boilerplate (which is filtered out), no tab appears.
 - Every `OfficeHour` row references an `OfficeHourHost`. The Instructors tab shows the host directory alongside the weekly hours grid.
 - If the uploaded syllabus specifies no grade weights, the review screen pre-fills a single `Overall` category at 100% and does not block commit.

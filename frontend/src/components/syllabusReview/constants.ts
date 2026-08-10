@@ -3,6 +3,7 @@ import type {
   ExtractedClassMeeting,
   ExtractedGradeCategory,
   ExtractedGradeScaleBand,
+  ExtractedMaterial,
   ExtractedNote,
   ExtractedOfficeHour,
   ExtractedOfficeHourHost,
@@ -75,6 +76,21 @@ export function emptyNote(): ExtractedNote {
   return { heading: "", body: "" };
 }
 
+export function emptyMaterial(): ExtractedMaterial {
+  return {
+    kind: "textbook",
+    title: "",
+    authors: null,
+    edition: null,
+    isbn: null,
+    publisher: null,
+    year: null,
+    url: null,
+    requirement: "required",
+    notes: null,
+  };
+}
+
 /** Blank review payload for courses set up without a syllabus upload. */
 export function emptyManualExtraction(course: {
   name: string;
@@ -96,6 +112,7 @@ export function emptyManualExtraction(course: {
     office_hour_hosts: [],
     office_hours: [],
     class_meetings: [],
+    materials: [],
     notes: [],
   };
 }

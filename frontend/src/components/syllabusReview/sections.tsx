@@ -4,10 +4,13 @@ import type {
   ExtractedCourseMeta,
   ExtractedGradeCategory,
   ExtractedGradeScaleBand,
+  ExtractedMaterial,
   ExtractedNote,
   ExtractedOfficeHour,
   ExtractedOfficeHourHost,
   HostRole,
+  MaterialKind,
+  MaterialRequirement,
 } from "@/api/types";
 
 import {
@@ -22,6 +25,7 @@ import {
   emptyCategory,
   emptyClassMeeting,
   emptyHost,
+  emptyMaterial,
   emptyNote,
   emptyOfficeHour,
   emptyScaleBand,
@@ -659,6 +663,196 @@ export function ClassMeetingsSection({
       <AddRowButton
         label="Add a class meeting"
         onClick={() => onChange([...value, emptyClassMeeting()])}
+      />
+    </SectionCard>
+  );
+}
+
+// --- Materials --------------------------------------------------------------
+
+export function MaterialsSection({
+  value,
+  onChange,
+}: {
+  value: ExtractedMaterial[];
+  onChange: (v: ExtractedMaterial[]) => void;
+}) {
+  function update(idx: number, patch: Partial<ExtractedMaterial>) {
+    onChange(value.map((row, i) => (i === idx ? { ...row, ...patch } : row)));
+  }
+  function remove(idx: number) {
+    onChange(value.filter((_, i) => i !== idx));
+  }
+
+  return (
+    <SectionCard
+      title="Materials"
+      description="Textbooks, readings, and other supplies — structured so you can scan them instead of reading a bibliography blob."
+    >
+      {value.length === 0 ? (
+        <p className="text-sm text-muted">
+          No materials found. Add a textbook, book, or other item if the course
+          needs one.
+        </p>
+      ) : null}
+      {value.map((m, idx) => (
+        <RowCard
+          key={idx}
+          onRemove={() => remove(idx)}
+          ariaLabel={`Remove material ${m.title || idx + 1}`}
+        >
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <div>
+                <label className="hint">Kind</label>
+                <select
+                  className="input"
+                  value={m.kind}
+                  onChange={(e) =>
+                    update(idx, { kind: e.target.value as MaterialKind })
+                  }
+                >
+                  <option value="textbook">Textbook</option>
+                  <option value="book">Book</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="hint">Requirement</label>
+                <select
+                  className="input"
+                  value={m.requirement}
+                  onChange={(e) =>
+                    update(idx, {
+                      requirement: e.target.value as MaterialRequirement,
+                    })
+                  }
+                >
+                  <option value="required">Required</option>
+                  <option value="recommended">Recommended</option>
+                </select>
+              </div>
+              <div className="sm:col-span-1">
+                <label className="hint">
+                  {m.kind === "other" ? "Name" : "Title"}
+                </label>
+                <input
+                  className="input"
+                  value={m.title}
+                  onChange={(e) => update(idx, { title: e.target.value })}
+                  placeholder={
+                    m.kind === "other" ? "TI-84 calculator" : "Book title"
+                  }
+                />
+              </div>
+            </div>
+
+            {m.kind !== "other" ? (
+              <div>
+                <label className="hint">Author(s)</label>
+                <input
+                  className="input"
+                  value={m.authors ?? ""}
+                  onChange={(e) =>
+                    update(idx, { authors: e.target.value.trim() || null })
+                  }
+                  placeholder="Last, First; Last2, First2"
+                />
+              </div>
+            ) : null}
+
+            {m.kind === "textbook" ? (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="hint">Edition</label>
+                  <input
+                    className="input"
+                    value={m.edition ?? ""}
+                    onChange={(e) =>
+                      update(idx, { edition: e.target.value.trim() || null })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="hint">ISBN</label>
+                  <input
+                    className="input font-num"
+                    value={m.isbn ?? ""}
+                    onChange={(e) =>
+                      update(idx, { isbn: e.target.value.trim() || null })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="hint">Publisher</label>
+                  <input
+                    className="input"
+                    value={m.publisher ?? ""}
+                    onChange={(e) =>
+                      update(idx, { publisher: e.target.value.trim() || null })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="hint">Year</label>
+                  <input
+                    className="input font-num"
+                    type="number"
+                    min={1000}
+                    max={2100}
+                    value={m.year ?? ""}
+                    onChange={(e) => {
+                      const raw = e.target.value.trim();
+                      update(idx, {
+                        year: raw === "" ? null : Number(raw) || null,
+                      });
+                    }}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="hint">URL</label>
+                  <input
+                    className="input"
+                    value={m.url ?? ""}
+                    onChange={(e) =>
+                      update(idx, { url: e.target.value.trim() || null })
+                    }
+                    placeholder="https://"
+                  />
+                </div>
+              </div>
+            ) : null}
+
+            {m.kind === "book" ? (
+              <div>
+                <label className="hint">URL (optional)</label>
+                <input
+                  className="input"
+                  value={m.url ?? ""}
+                  onChange={(e) =>
+                    update(idx, { url: e.target.value.trim() || null })
+                  }
+                />
+              </div>
+            ) : null}
+
+            <div>
+              <label className="hint">Notes</label>
+              <textarea
+                className="input min-h-[60px]"
+                value={m.notes ?? ""}
+                onChange={(e) =>
+                  update(idx, { notes: e.target.value.trim() || null })
+                }
+                placeholder="Any edition OK; bring to exams…"
+              />
+            </div>
+          </div>
+        </RowCard>
+      ))}
+      <AddRowButton
+        label="Add a material"
+        onClick={() => onChange([...value, emptyMaterial()])}
       />
     </SectionCard>
   );

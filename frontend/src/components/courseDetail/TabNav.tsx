@@ -1,6 +1,11 @@
 import { cn } from "@/lib/utils";
 
-export type CourseTabId = "gradebook" | "assignments" | "instructors" | "notes";
+export type CourseTabId =
+  | "gradebook"
+  | "assignments"
+  | "instructors"
+  | "materials"
+  | "notes";
 
 interface Tab {
   id: CourseTabId;
@@ -18,6 +23,7 @@ export function TabNav({ active, onSelect, showNotes }: TabNavProps) {
     { id: "gradebook", label: "Gradebook" },
     { id: "assignments", label: "Assignments" },
     { id: "instructors", label: "Instructors" },
+    { id: "materials", label: "Materials" },
   ];
   if (showNotes) tabs.push({ id: "notes", label: "Notes" });
 

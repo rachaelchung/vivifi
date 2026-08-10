@@ -8,6 +8,7 @@ import { BrandMark } from "@/components/BrandMark";
 import { AssignmentsTab } from "@/components/courseDetail/AssignmentsTab";
 import { GradebookTab } from "@/components/courseDetail/GradebookTab";
 import { InstructorsTab } from "@/components/courseDetail/InstructorsTab";
+import { MaterialsTab } from "@/components/courseDetail/MaterialsTab";
 import { NotesTab } from "@/components/courseDetail/NotesTab";
 import { TabNav, type CourseTabId } from "@/components/courseDetail/TabNav";
 import { EditCourseModal } from "@/components/EditCourseModal";
@@ -157,6 +158,9 @@ export default function CourseDetailPage() {
                   {tab === "instructors" ? (
                     <InstructorsTab courseSlug={course.slug} />
                   ) : null}
+                  {tab === "materials" ? (
+                    <MaterialsTab courseSlug={course.slug} />
+                  ) : null}
                   {tab === "notes" && showNotes ? (
                     <NotesTab courseSlug={course.slug} />
                   ) : null}
@@ -174,8 +178,8 @@ export default function CourseDetailPage() {
                   <p className="mt-2 max-w-2xl text-sm text-muted">
                     Upload the syllabus (PDF, or paste the text). Vivifi extracts
                     the course meta, grade breakdown, assignments, exams, hosts,
-                    and office hours. You review and edit everything on the next
-                    screen before anything is saved.
+                    office hours, and materials. You review and edit everything
+                    on the next screen before anything is saved.
                   </p>
                 </div>
 

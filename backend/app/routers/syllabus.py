@@ -26,6 +26,7 @@ from app.models import (
     Assignment,
     ClassMeeting,
     Course,
+    CourseMaterial,
     CourseNote,
     GradebookEntry,
     GradeCategory,
@@ -326,7 +327,26 @@ def commit_syllabus(
                 )
             )
 
-        # 6. Course notes.
+        # 6. Course materials (textbooks, books, other supplies).
+        for mat in extraction.materials:
+            db.add(
+                CourseMaterial(
+                    course_id=course.id,
+                    kind=mat.kind,
+                    title=mat.title.strip(),
+                    authors=mat.authors,
+                    edition=mat.edition,
+                    isbn=mat.isbn,
+                    publisher=mat.publisher,
+                    year=mat.year,
+                    url=mat.url,
+                    requirement=mat.requirement or "required",
+                    notes=mat.notes,
+                    source="syllabus",
+                )
+            )
+
+        # 7. Course notes.
         for note in extraction.notes:
             db.add(
                 CourseNote(
@@ -337,7 +357,7 @@ def commit_syllabus(
                 )
             )
 
-        # 7. Assignments — each paired with a GradebookEntry (SPEC lifecycle).
+        # 8. Assignments — each paired with a GradebookEntry (SPEC lifecycle).
         for a in extraction.assignments:
             category = (
                 category_by_name.get(a.category_name.strip())

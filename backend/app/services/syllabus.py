@@ -115,14 +115,35 @@ Rules you MUST follow:
      section's contact on the review screen).
    - Do the same for any host `email` field: one address or null, never a list.
 
-8. For `notes`, **skip generic university boilerplate**: Title IX statements,
+8. For `materials`, extract required or recommended course materials as
+   structured rows — NEVER dump bibliography prose into `notes`.
+
+   **Kinds:**
+   - `"textbook"` — primary course textbook(s): fill title, authors, and any
+     of edition / isbn / publisher / year / url the syllabus provides.
+   - `"book"` — other books or readings without full bibliographic identity
+     (title + authors; put edition/version details in `notes` if mentioned).
+   - `"other"` — non-book items (TI-84 calculator, lab kit, software,
+     clicker, etc.): put the object name in `title`; leave authors/edition/
+     isbn/publisher/year null unless clearly stated.
+
+   **Requirement:** `"required"` or `"recommended"`. If the syllabus is silent
+   or ambiguous, default to `"required"`.
+
+   Prefer structured fields over stuffing everything into `notes`. Use
+   `notes` only for short extras ("bring to every exam", "any recent
+   edition OK"). Preserve ISBN strings and URLs exactly. If nothing is
+   listed, return an empty `materials` array.
+
+9. For `notes`, **skip generic university boilerplate**: Title IX statements,
    generic academic integrity language, disability accommodations sections,
    drop/withdraw deadlines, and any content that would appear identically
    across most syllabi at the school. **Only include course-specific content**
    the instructor is emphasizing: unusual late-work policy, particular
    attendance rules, laptop/phone rules, communication expectations, unique
-   exam structure, required non-textbook materials, etc. If nothing
-   course-specific is worth surfacing, return an empty `notes` array.
+   exam structure, etc. Do NOT put textbooks, books, or supply lists in
+   `notes` — those belong in `materials`. If nothing course-specific is
+   worth surfacing, return an empty `notes` array.
 
    **Be concise:**
    - `heading`: 2–5 words, title-case, no trailing punctuation.
@@ -133,21 +154,21 @@ Rules you MUST follow:
    - Prefer fewer high-signal notes over many verbose ones. When in doubt,
      leave a note out.
 
-9. If the syllabus does not state a grading scale, return an empty
-   `grading_scale` array — the frontend will fall back to a standard 10-point
-   scale that the user can edit.
+10. If the syllabus does not state a grading scale, return an empty
+    `grading_scale` array — the frontend will fall back to a standard 10-point
+    scale that the user can edit.
 
-10. Category weights should sum to 100 when the syllabus states them
+11. Category weights should sum to 100 when the syllabus states them
     explicitly. If they don't sum to 100 in the source, return the numbers as
     written and let the user reconcile on the review screen.
 
-11. All output text is in English. If the syllabus is in another language,
+12. All output text is in English. If the syllabus is in another language,
     translate values to English while preserving proper nouns, room codes,
     URLs, and course codes verbatim.
 
-12. `day_of_week` is 0-indexed with Monday = 0 and Sunday = 6.
+13. `day_of_week` is 0-indexed with Monday = 0 and Sunday = 6.
 
-13. All times (`start_time`, `end_time`) are strings in 24-hour "HH:MM"
+14. All times (`start_time`, `end_time`) are strings in 24-hour "HH:MM"
     format. Convert "2:30pm" to "14:30".
 
 Schema:
@@ -182,6 +203,18 @@ Schema:
   "class_meetings": [
     {"day_of_week": 0-6, "start_time": "HH:MM", "end_time": "HH:MM",
      "location": string | null}
+  ],
+  "materials": [
+    {"kind": "textbook"|"book"|"other",
+     "title": string,
+     "authors": string | null,
+     "edition": string | null,
+     "isbn": string | null,
+     "publisher": string | null,
+     "year": number | null,
+     "url": string | null,
+     "requirement": "required"|"recommended",
+     "notes": string | null}
   ],
   "notes": [
     {"heading": string, "body": string}
