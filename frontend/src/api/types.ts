@@ -121,7 +121,17 @@ export interface ExtractedOfficeHour {
   host_name: string;
 }
 
+export type ClassMeetingKind =
+  | "lecture"
+  | "recitation"
+  | "lab"
+  | "seminar"
+  | "other";
+
 export interface ExtractedClassMeeting {
+  kind: ClassMeetingKind;
+  section: string | null;
+  is_mine: boolean;
   day_of_week: number;
   start_time: string;
   end_time: string;
@@ -365,6 +375,37 @@ export interface CourseMaterialUpdatePayload {
   url?: string | null;
   requirement?: MaterialRequirement;
   notes?: string | null;
+}
+
+export interface ClassMeeting {
+  id: number;
+  kind: ClassMeetingKind;
+  section: string | null;
+  is_mine: boolean;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  location: string | null;
+}
+
+export interface ClassMeetingCreatePayload {
+  kind?: ClassMeetingKind;
+  section?: string | null;
+  is_mine?: boolean;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  location?: string | null;
+}
+
+export interface ClassMeetingUpdatePayload {
+  kind?: ClassMeetingKind;
+  section?: string | null;
+  is_mine?: boolean;
+  day_of_week?: number;
+  start_time?: string;
+  end_time?: string;
+  location?: string | null;
 }
 
 // Current-grade + prediction

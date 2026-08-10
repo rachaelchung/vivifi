@@ -171,6 +171,31 @@ Rules you MUST follow:
 14. All times (`start_time`, `end_time`) are strings in 24-hour "HH:MM"
     format. Convert "2:30pm" to "14:30".
 
+15. **Class meetings — kind, section, and is_mine.**
+    Extract every regular class session (lecture, recitation, lab, seminar,
+    or other course-specific sub-session such as "MATLAB reci" / "PSO").
+
+    **kind** (closed enum):
+    - `"lecture"` — main lecture / class meeting for the course
+    - `"recitation"` — recitation, reci, discussion section, PSO, SI session
+    - `"lab"` — lab / laboratory
+    - `"seminar"` — seminar
+    - `"other"` — anything else (MATLAB session, workshop, etc.)
+
+    **section** (string | null):
+    - When the syllabus lists alternate sections for the same kind (e.g.
+      "Recitation A / B / C", "Lab L01–L04"), emit ONE row per alternative
+      and put the section label in `section` (e.g. "A", "Section B", "L01").
+    - When there are no section alternatives, set `section` to null.
+
+    **is_mine** (boolean) — whether this row is the student's meeting:
+    - If a kind has no section alternatives (all `section` null, or only one
+      meeting of that kind), set `is_mine: true` on those rows.
+    - If a kind has multiple rows with distinct non-null section labels,
+      set `is_mine: false` on ALL of them — the student picks on review.
+    - Shared lectures that apply to every student (section null) stay
+      `is_mine: true` even when recitations/labs have section alternatives.
+
 Schema:
 
 {
@@ -201,7 +226,10 @@ Schema:
      "location": string | null, "host_name": string}
   ],
   "class_meetings": [
-    {"day_of_week": 0-6, "start_time": "HH:MM", "end_time": "HH:MM",
+    {"kind": "lecture"|"recitation"|"lab"|"seminar"|"other",
+     "section": string | null,
+     "is_mine": boolean,
+     "day_of_week": 0-6, "start_time": "HH:MM", "end_time": "HH:MM",
      "location": string | null}
   ],
   "materials": [
@@ -436,7 +464,82 @@ def sanitize_extraction_dict(parsed: dict[str, Any]) -> dict[str, Any]:
             )
 
     parsed["office_hour_hosts"] = expanded
+    _normalize_class_meetings(parsed)
     return parsed
+
+
+_KIND_ALIASES: dict[str, str] = {
+    "lecture": "lecture",
+    "class": "lecture",
+    "recitation": "recitation",
+    "reci": "recitation",
+    "discussion": "recitation",
+    "pso": "recitation",
+    "si": "recitation",
+    "si session": "recitation",
+    "lab": "lab",
+    "laboratory": "lab",
+    "seminar": "seminar",
+    "other": "other",
+}
+
+
+def _normalize_meeting_kind(raw: object) -> str:
+    if not isinstance(raw, str) or not raw.strip():
+        return "lecture"
+    key = raw.strip().lower()
+    if key in _KIND_ALIASES:
+        return _KIND_ALIASES[key]
+    # Soft match common substrings.
+    if "reci" in key or "discuss" in key or key == "pso":
+        return "recitation"
+    if "lab" in key:
+        return "lab"
+    if "seminar" in key:
+        return "seminar"
+    if "lecture" in key or key == "class":
+        return "lecture"
+    return "other"
+
+
+def _normalize_class_meetings(parsed: dict[str, Any]) -> None:
+    """Normalize kind aliases and apply is_mine heuristics.
+
+    Heuristic (overrides Claude when inconsistent):
+    - For each kind, if there are ≥2 meetings with distinct non-null sections,
+      force is_mine=False on all of that kind's rows.
+    - Otherwise force is_mine=True (unsectioned / single section).
+    """
+    raw = parsed.get("class_meetings")
+    if not isinstance(raw, list):
+        parsed["class_meetings"] = []
+        return
+
+    meetings: list[dict[str, Any]] = [m for m in raw if isinstance(m, dict)]
+    for m in meetings:
+        m["kind"] = _normalize_meeting_kind(m.get("kind"))
+        section = m.get("section")
+        if isinstance(section, str):
+            stripped = section.strip()
+            m["section"] = stripped or None
+        elif section is not None:
+            m["section"] = None
+
+    by_kind: dict[str, list[dict[str, Any]]] = {}
+    for m in meetings:
+        by_kind.setdefault(str(m["kind"]), []).append(m)
+
+    for rows in by_kind.values():
+        sections = {
+            r["section"]
+            for r in rows
+            if isinstance(r.get("section"), str) and r["section"]
+        }
+        multi_section = len(sections) >= 2
+        for r in rows:
+            r["is_mine"] = not multi_section
+
+    parsed["class_meetings"] = meetings
 
 
 def extract_syllabus(

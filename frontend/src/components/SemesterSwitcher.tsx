@@ -157,8 +157,8 @@ export function SemesterSwitcher({
       <div className="ml-auto flex items-end gap-0.5">
         <Link
           to="/office-hours"
-          aria-label="Office hours"
-          title="Office hours"
+          aria-label="Week schedule"
+          title="Week schedule"
           className={cn(
             "-mb-px inline-flex items-center justify-center rounded-t-lg border border-transparent px-3 py-2 transition-colors",
             officeHoursActive

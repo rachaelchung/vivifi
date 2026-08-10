@@ -1,16 +1,26 @@
 import type { ReactNode } from "react";
 
+import { cn } from "@/lib/utils";
+
 interface RowCardProps {
   children: ReactNode;
   onRemove?: () => void;
   ariaLabel?: string;
+  className?: string;
 }
 
 /** One editable row on the Syllabus Review screen. A card-ish wrapper with a
  * trash icon on the right; used across categories, assignments, hosts, etc. */
-export function RowCard({ children, onRemove, ariaLabel }: RowCardProps) {
+export function RowCard({
+  children,
+  onRemove,
+  ariaLabel,
+  className,
+}: RowCardProps) {
   return (
-    <div className="rounded-lg border border-border bg-surface p-3">
+    <div
+      className={cn("rounded-lg border border-border bg-surface p-3", className)}
+    >
       <div className="flex items-start gap-3">
         <div className="min-w-0 flex-1">{children}</div>
         {onRemove ? (

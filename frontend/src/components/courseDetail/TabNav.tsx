@@ -4,6 +4,7 @@ export type CourseTabId =
   | "gradebook"
   | "assignments"
   | "instructors"
+  | "meetings"
   | "materials"
   | "notes";
 
@@ -23,6 +24,7 @@ export function TabNav({ active, onSelect, showNotes }: TabNavProps) {
     { id: "gradebook", label: "Gradebook" },
     { id: "assignments", label: "Assignments" },
     { id: "instructors", label: "Instructors" },
+    { id: "meetings", label: "Meetings" },
     { id: "materials", label: "Materials" },
   ];
   if (showNotes) tabs.push({ id: "notes", label: "Notes" });

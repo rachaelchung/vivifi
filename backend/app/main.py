@@ -7,6 +7,7 @@ from app.routers import (
     assignments,
     auth,
     categories,
+    class_meetings,
     courses,
     grade,
     gradebook,
@@ -52,6 +53,7 @@ app.include_router(office_hours.hosts_router)
 app.include_router(office_hours.hours_router)
 app.include_router(notes.router)
 app.include_router(materials.router)
+app.include_router(class_meetings.router)
 app.include_router(grade.router)
 
 

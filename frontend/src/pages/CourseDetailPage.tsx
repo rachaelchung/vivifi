@@ -9,6 +9,7 @@ import { AssignmentsTab } from "@/components/courseDetail/AssignmentsTab";
 import { GradebookTab } from "@/components/courseDetail/GradebookTab";
 import { InstructorsTab } from "@/components/courseDetail/InstructorsTab";
 import { MaterialsTab } from "@/components/courseDetail/MaterialsTab";
+import { MeetingsTab } from "@/components/courseDetail/MeetingsTab";
 import { NotesTab } from "@/components/courseDetail/NotesTab";
 import { TabNav, type CourseTabId } from "@/components/courseDetail/TabNav";
 import { EditCourseModal } from "@/components/EditCourseModal";
@@ -157,6 +158,9 @@ export default function CourseDetailPage() {
                   ) : null}
                   {tab === "instructors" ? (
                     <InstructorsTab courseSlug={course.slug} />
+                  ) : null}
+                  {tab === "meetings" ? (
+                    <MeetingsTab courseSlug={course.slug} />
                   ) : null}
                   {tab === "materials" ? (
                     <MaterialsTab courseSlug={course.slug} />

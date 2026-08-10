@@ -5,6 +5,9 @@ import type {
   Assignment,
   AssignmentCreatePayload,
   AssignmentUpdatePayload,
+  ClassMeeting,
+  ClassMeetingCreatePayload,
+  ClassMeetingUpdatePayload,
   CourseMaterial,
   CourseMaterialCreatePayload,
   CourseMaterialUpdatePayload,
@@ -50,6 +53,7 @@ const hostsKey = (slug: string) => ["office-hour-hosts", slug] as const;
 const hoursKey = (slug: string) => ["office-hours", slug] as const;
 const notesKey = (slug: string) => ["notes", slug] as const;
 const materialsKey = (slug: string) => ["materials", slug] as const;
+const classMeetingsKey = (slug: string) => ["class-meetings", slug] as const;
 const gradeKey = (slug: string) => ["grade", slug] as const;
 
 // After any grade-affecting mutation, invalidate the queries that depend
@@ -460,6 +464,61 @@ export function useDeleteMaterial(slug: string) {
         method: "DELETE",
       }),
     onSuccess: () => qc.invalidateQueries({ queryKey: materialsKey(slug) }),
+  });
+}
+
+// --- class meetings -------------------------------------------------------
+
+export function useClassMeetings(slug: string | null) {
+  return useQuery({
+    queryKey: classMeetingsKey(slug ?? ""),
+    queryFn: () =>
+      apiRequest<ClassMeeting[]>(`/courses/${slug}/class-meetings`),
+    enabled: !!slug,
+  });
+}
+
+export function useCreateClassMeeting(slug: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: ClassMeetingCreatePayload) =>
+      apiRequest<ClassMeeting>(`/courses/${slug}/class-meetings`, {
+        method: "POST",
+        body: payload,
+      }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: classMeetingsKey(slug) }),
+  });
+}
+
+export function useUpdateClassMeeting(slug: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: number;
+      payload: ClassMeetingUpdatePayload;
+    }) =>
+      apiRequest<ClassMeeting>(`/courses/${slug}/class-meetings/${id}`, {
+        method: "PATCH",
+        body: payload,
+      }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: classMeetingsKey(slug) }),
+  });
+}
+
+export function useDeleteClassMeeting(slug: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) =>
+      apiRequest<void>(`/courses/${slug}/class-meetings/${id}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: classMeetingsKey(slug) }),
   });
 }
 

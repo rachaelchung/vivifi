@@ -5,6 +5,7 @@ import { ApiError } from "@/api/client";
 import { useCourse } from "@/api/courses";
 import { useCommitSyllabus } from "@/api/syllabus";
 import type {
+  ClassMeetingKind,
   SyllabusExtraction,
   SyllabusExtractResponse,
 } from "@/api/types";
@@ -22,6 +23,36 @@ import {
   OfficeHoursSection,
 } from "@/components/syllabusReview/sections";
 import { useAuth } from "@/contexts/AuthContext";
+
+const MEETING_KIND_LABELS: Record<ClassMeetingKind, string> = {
+  lecture: "Lecture",
+  recitation: "Recitation",
+  lab: "Lab",
+  seminar: "Seminar",
+  other: "Other",
+};
+
+/** Kinds that list ≥2 distinct non-null sections with none marked mine. */
+function unmetSectionPicks(extraction: SyllabusExtraction): ClassMeetingKind[] {
+  const byKind = new Map<ClassMeetingKind, typeof extraction.class_meetings>();
+  for (const m of extraction.class_meetings) {
+    const list = byKind.get(m.kind) ?? [];
+    list.push(m);
+    byKind.set(m.kind, list);
+  }
+  const unmet: ClassMeetingKind[] = [];
+  for (const [kind, rows] of byKind) {
+    const sections = new Set(
+      rows
+        .map((r) => r.section?.trim())
+        .filter((s): s is string => !!s),
+    );
+    if (sections.size < 2) continue;
+    const anyMine = rows.some((r) => r.is_mine && r.section?.trim());
+    if (!anyMine) unmet.push(kind);
+  }
+  return unmet;
+}
 
 interface LocationState {
   response?: SyllabusExtractResponse;
@@ -68,8 +99,16 @@ export default function SyllabusReviewPage() {
   }, [extraction]);
 
   const weightsOk = Math.abs(weightSum - 100) < 0.5;
+  const sectionPicksNeeded = useMemo(
+    () => (extraction ? unmetSectionPicks(extraction) : []),
+    [extraction],
+  );
+  const sectionsOk = sectionPicksNeeded.length === 0;
   const canCommit =
-    !!extraction && extraction.grade_categories.length > 0 && weightsOk;
+    !!extraction &&
+    extraction.grade_categories.length > 0 &&
+    weightsOk &&
+    sectionsOk;
 
   if (!slug) {
     return <Navigate to="/" replace />;
@@ -245,14 +284,22 @@ export default function SyllabusReviewPage() {
       <footer className="fixed inset-x-0 bottom-0 border-t border-border bg-surface/95 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center justify-between gap-4 px-6 py-4">
           <div className="text-sm">
-            {weightsOk ? (
-              <span className="text-muted">
-                Weights sum to {Math.round(weightSum * 100) / 100}%.
-              </span>
-            ) : (
+            {!weightsOk ? (
               <span className="text-danger">
                 Weights sum to {Math.round(weightSum * 100) / 100}% — must be
                 100 to commit.
+              </span>
+            ) : !sectionsOk ? (
+              <span className="text-danger">
+                Mark which section is yours for{" "}
+                {sectionPicksNeeded
+                  .map((k) => MEETING_KIND_LABELS[k])
+                  .join(", ")}
+                .
+              </span>
+            ) : (
+              <span className="text-muted">
+                Weights sum to {Math.round(weightSum * 100) / 100}%.
               </span>
             )}
           </div>
@@ -285,17 +332,27 @@ export default function SyllabusReviewPage() {
 // SPEC: if the extraction returned no grading scale, pre-fill the standard
 // 10-point scale on the review screen so the user can accept or edit.
 function seedDefaults(extraction: SyllabusExtraction): SyllabusExtraction {
-  const withMaterials: SyllabusExtraction = {
+  const class_meetings = (extraction.class_meetings ?? []).map((m) => ({
+    kind: m.kind ?? "lecture",
+    section: m.section ?? null,
+    is_mine: m.is_mine ?? true,
+    day_of_week: m.day_of_week,
+    start_time: m.start_time,
+    end_time: m.end_time,
+    location: m.location ?? null,
+  }));
+  const withDefaults: SyllabusExtraction = {
     ...extraction,
     materials: extraction.materials ?? [],
+    class_meetings,
   };
-  if (withMaterials.grading_scale.length === 0) {
+  if (withDefaults.grading_scale.length === 0) {
     return {
-      ...withMaterials,
+      ...withDefaults,
       grading_scale: DEFAULT_SCALE.map((b) => ({ ...b })),
     };
   }
-  return withMaterials;
+  return withDefaults;
 }
 
 function Banner({

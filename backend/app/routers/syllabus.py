@@ -320,6 +320,9 @@ def commit_syllabus(
             db.add(
                 ClassMeeting(
                     course_id=course.id,
+                    kind=cm.kind,
+                    section=cm.section,
+                    is_mine=cm.is_mine,
                     day_of_week=cm.day_of_week,
                     start_time=cm.start_time,
                     end_time=cm.end_time,

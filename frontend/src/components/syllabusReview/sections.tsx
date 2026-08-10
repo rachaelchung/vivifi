@@ -1,4 +1,5 @@
 import type {
+  ClassMeetingKind,
   ExtractedAssignment,
   ExtractedClassMeeting,
   ExtractedCourseMeta,
@@ -12,7 +13,6 @@ import type {
   MaterialKind,
   MaterialRequirement,
 } from "@/api/types";
-
 import {
   AddRowButton,
   SectionCard,
@@ -30,7 +30,27 @@ import {
   emptyOfficeHour,
   emptyScaleBand,
 } from "@/components/syllabusReview/constants";
+import { cn } from "@/lib/utils";
 
+const MEETING_KINDS: { value: ClassMeetingKind; label: string }[] = [
+  { value: "lecture", label: "Lecture" },
+  { value: "recitation", label: "Recitation" },
+  { value: "lab", label: "Lab" },
+  { value: "seminar", label: "Seminar" },
+  { value: "other", label: "Other" },
+];
+
+const KIND_ORDER: ClassMeetingKind[] = [
+  "lecture",
+  "recitation",
+  "lab",
+  "seminar",
+  "other",
+];
+
+function kindLabel(kind: ClassMeetingKind): string {
+  return MEETING_KINDS.find((k) => k.value === kind)?.label ?? kind;
+}
 // --- Course meta ------------------------------------------------------------
 
 export function CourseMetaSection({
@@ -497,7 +517,7 @@ export function OfficeHoursSection({
   return (
     <SectionCard
       title="Office hours"
-      description="Weekly blocks that show up on the Office Hour Week grid. Location can be a room, a Zoom URL, a hybrid string, or empty — whatever the syllabus says."
+      description="Weekly blocks that show up on the Week Schedule office-hours layer. Location can be a room, a Zoom URL, a hybrid string, or empty — whatever the syllabus says."
     >
       {!hasHosts && value.length > 0 ? (
         <p className="text-sm text-danger">
@@ -601,64 +621,134 @@ export function ClassMeetingsSection({
     onChange(value.filter((_, i) => i !== idx));
   }
 
+  // Stable display order: by kind, then mine first, then original index.
+  const ordered = value
+    .map((cm, idx) => ({ cm, idx }))
+    .sort((a, b) => {
+      const ka = KIND_ORDER.indexOf(a.cm.kind);
+      const kb = KIND_ORDER.indexOf(b.cm.kind);
+      if (ka !== kb) return ka - kb;
+      if (a.cm.is_mine !== b.cm.is_mine) return a.cm.is_mine ? -1 : 1;
+      return a.idx - b.idx;
+    });
+
+  const groups = KIND_ORDER.map((kind) => ({
+    kind,
+    rows: ordered.filter((r) => r.cm.kind === kind),
+  })).filter((g) => g.rows.length > 0);
+
   return (
     <SectionCard
       title="Class meetings"
-      description="Regular lecture/lab times. Persisted for future features; no MVP UI beyond this section."
+      description="Lectures, recitations, labs, and other sessions. Mark Mine on the ones you attend — those show on your Week Schedule. When a syllabus lists alternate sections, pick yours before committing."
     >
-      {value.map((cm, idx) => (
-        <RowCard
-          key={idx}
-          onRemove={() => remove(idx)}
-          ariaLabel={`Remove class meeting ${idx + 1}`}
-        >
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[130px_110px_110px_1fr]">
-            <div>
-              <label className="hint">Day</label>
-              <select
-                className="input"
-                value={cm.day_of_week}
-                onChange={(e) =>
-                  update(idx, { day_of_week: Number(e.target.value) })
-                }
-              >
-                {WEEKDAYS.map((d, i) => (
-                  <option key={d} value={i}>
-                    {d}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="hint">Start</label>
-              <input
-                className="input font-num"
-                type="time"
-                value={cm.start_time.slice(0, 5)}
-                onChange={(e) => update(idx, { start_time: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="hint">End</label>
-              <input
-                className="input font-num"
-                type="time"
-                value={cm.end_time.slice(0, 5)}
-                onChange={(e) => update(idx, { end_time: e.target.value })}
-              />
-            </div>
-            <div>
-              <label className="hint">Location</label>
-              <input
-                className="input"
-                value={cm.location ?? ""}
-                onChange={(e) =>
-                  update(idx, { location: e.target.value.trim() || null })
-                }
-              />
-            </div>
-          </div>
-        </RowCard>
+      {groups.map(({ kind, rows }) => (
+        <div key={kind} className="space-y-3">
+          <h3 className="text-sm font-semibold text-fg">{kindLabel(kind)}</h3>
+          {rows.map(({ cm, idx }) => (
+            <RowCard
+              key={idx}
+              onRemove={() => remove(idx)}
+              ariaLabel={`Remove class meeting ${idx + 1}`}
+              className={cn(
+                cm.is_mine && "ring-1 ring-accent/40 bg-accent/5",
+              )}
+            >
+              <div className="mb-3 flex flex-wrap items-center gap-3">
+                <label className="flex items-center gap-2 text-sm font-medium">
+                  <input
+                    type="checkbox"
+                    checked={cm.is_mine}
+                    onChange={(e) => update(idx, { is_mine: e.target.checked })}
+                  />
+                  Mine
+                </label>
+                {cm.is_mine ? (
+                  <span className="text-xs font-medium text-accent">
+                    On your schedule
+                  </span>
+                ) : null}
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div>
+                  <label className="hint">Kind</label>
+                  <select
+                    className="input"
+                    value={cm.kind}
+                    onChange={(e) =>
+                      update(idx, {
+                        kind: e.target.value as ClassMeetingKind,
+                      })
+                    }
+                  >
+                    {MEETING_KINDS.map((k) => (
+                      <option key={k.value} value={k.value}>
+                        {k.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="hint">Section (optional)</label>
+                  <input
+                    className="input"
+                    placeholder="e.g. A, L01"
+                    value={cm.section ?? ""}
+                    onChange={(e) =>
+                      update(idx, {
+                        section: e.target.value.trim() || null,
+                      })
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="hint">Day</label>
+                  <select
+                    className="input"
+                    value={cm.day_of_week}
+                    onChange={(e) =>
+                      update(idx, { day_of_week: Number(e.target.value) })
+                    }
+                  >
+                    {WEEKDAYS.map((d, i) => (
+                      <option key={d} value={i}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="hint">Start</label>
+                  <input
+                    className="input font-num"
+                    type="time"
+                    value={cm.start_time.slice(0, 5)}
+                    onChange={(e) => update(idx, { start_time: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="hint">End</label>
+                  <input
+                    className="input font-num"
+                    type="time"
+                    value={cm.end_time.slice(0, 5)}
+                    onChange={(e) => update(idx, { end_time: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="hint">Location</label>
+                  <input
+                    className="input"
+                    value={cm.location ?? ""}
+                    onChange={(e) =>
+                      update(idx, { location: e.target.value.trim() || null })
+                    }
+                  />
+                </div>
+              </div>
+            </RowCard>
+          ))}
+        </div>
       ))}
       <AddRowButton
         label="Add a class meeting"

@@ -65,6 +65,9 @@ export function emptyOfficeHour(hostName: string = ""): ExtractedOfficeHour {
 
 export function emptyClassMeeting(): ExtractedClassMeeting {
   return {
+    kind: "lecture",
+    section: null,
+    is_mine: true,
     day_of_week: 0,
     start_time: "10:00",
     end_time: "11:20",

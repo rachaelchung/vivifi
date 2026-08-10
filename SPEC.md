@@ -23,7 +23,7 @@ The differentiator: **the syllabus is the primary interface.** Grades, calendar,
 - **Materials** — Textbooks, readings, and supplies as structured rows (`textbook` | `book` | `other`), each marked required or recommended. Shown as scannable cards on an always-on Materials tab — not a bibliography wall of text.
 - **Live Gradebook** — Weighted grade math across categories (e.g. Homework 20%, Midterm 25%, Final 30%), including `drop_lowest_n` when the syllabus says so. Auto-populated from your syllabus assignments, plus room for manual entries (attendance, participation, extra credit). A dedicated query box answers "what do I need on the final to get an A?" with a number, not a chat.
 - **Assignment + Exam Tracker** — A task-focused view separate from the gradebook: what's due, when, whether you've done it. Drag-and-drop on any calendar view reschedules an assignment; exams render distinctively and are non-draggable (profs set them). Marking an assignment "done" is fully independent of entering its grade.
-- **Instructors & Office Hours** — Each prof, TA, and learning assistant is a first-class entity with their own hours, email, and Zoom link. Per-course grid on the Instructors tab; consolidated **Office Hour Week** across all courses, colored by course and filterable by host, with a live now-line.
+- **Instructors & Office Hours** — Each prof, TA, and learning assistant is a first-class entity with their own hours, email, and Zoom link. Per-course grid on the Instructors tab; consolidated **Week Schedule** across all courses (your class meetings and/or office hours), colored by course and filterable by host, with a live now-line.
 
 ## Grade Calculator
 
@@ -55,10 +55,10 @@ The Assignments tab and the Gradebook tab are **independent views** that share i
 | Login | Email/password or Google OAuth. New users are routed into Semester Setup. |
 | Semester Setup | First-run only, and reachable later via "+ New Semester" from the switcher. A single form asks for a semester name (e.g. `"Fall 2025"`, `"F25"`, `"Spring"`) and optional start/end dates. Dates are used only as extraction context (for expanding recurring assignments) and as a hint for the calendar — not enforced. Submit → land on an empty Semester Hub for that semester. |
 | Semester Hub | Main screen. A **folder-style tab semester switcher** at the top (past semesters remain readable, the active one is marked) lets you move between semesters seamlessly. Below it: a dashboard of course cards for the active semester, plus a "+ Add course" tile. If no courses exist yet, that tile is the only card. Adding a new semester is a menu item on the switcher; nothing prompts you to make one — you make one when you need one. |
-| Syllabus Review | After a PDF upload, an editable table of everything Claude extracted (course meta, grade categories, grading scale, assignments and exams, instructor roster, office hours, class meeting times, materials, course notes). Nothing is persisted until the user confirms. If extraction looks incomplete (e.g. no assignments found, or the syllabus appears to be a scan), shows a banner suggesting the paste-text alternative flow. |
-| Course Detail | Tabs: **Gradebook** (graded entries grouped by category, plus the prediction query box), **Assignments** (schedule/task list with `source` visible and `kind` badged; `completed` is per-row), **Instructors** (per-course host directory + weekly hours grid), **Materials** (always visible — empty state "No materials required" plus manual add), **Notes** *(conditional — appears only when Claude extracted at least one course-specific note)*. |
+| Syllabus Review | After a PDF upload, an editable table of everything Claude extracted (course meta, grade categories, grading scale, assignments and exams, instructor roster, office hours, class meetings with kind / section / Mine, materials, course notes). Nothing is persisted until the user confirms. If extraction looks incomplete (e.g. no assignments found, or the syllabus appears to be a scan), shows a banner suggesting the paste-text alternative flow. Commit is blocked until category weights sum to 100 and, when alternate sections exist for a meeting kind, at least one of those sectioned rows is marked Mine. |
+| Course Detail | Tabs: **Gradebook** (graded entries grouped by category, plus the prediction query box), **Assignments** (schedule/task list with `source` visible and `kind` badged; `completed` is per-row), **Instructors** (per-course host directory + weekly hours grid), **Meetings** (class meetings grouped by kind — lecture / recitation / lab / seminar / other — with per-row Mine toggle; yours pinned and highlighted), **Materials** (always visible — empty state "No materials required" plus manual add), **Notes** *(conditional — appears only when Claude extracted at least one course-specific note)*. |
 | Calendar | All assignments and exams across courses. Toggle list / week / month. Exams render distinctively (bigger footprint, distinct shape/color) and are **not draggable**; assignments can be **rescheduled by drag-and-drop** on any view. Check off completed items inline. |
-| Office Hour Week | Consolidated weekly grid across all courses; blocks colored by course, filterable by host; live line showing current day and time. |
+| Week Schedule | Consolidated weekly grid across all courses at `/office-hours`. Default layer: **My schedule** (`ClassMeeting` rows with `is_mine`). Independent **Office hours** layer toggle. Both can be on together. Blocks colored by course; OH filterable by host; live now-line. Class meetings and OH blocks are visually distinct. |
 | Settings | Target grades, account, sign out. |
 
 ## Data Model
@@ -130,9 +130,13 @@ Hierarchy: `User -> Semester -> Course -> {GradeScaleBand, GradeCategory, Assign
 - `location` is a free-form string that may be a physical location (`"GHC 5219"`), a Zoom URL (`"https://cmu.zoom.us/j/12345"`), a hybrid description (`"GHC 5219 + zoom.us/j/12345"`), or any other rendering the syllabus uses. The UI renders a URL-shaped value as a clickable link and a room-shaped value as plain text.
 - If `location` is empty and the host has a `zoom_link` set on their `OfficeHourHost`, the UI falls back to that link. This handles the common "all my hours are on my personal Zoom" case without repeating the URL on every block.
 
-**ClassMeeting** (a regular class meeting time — stored during syllabus ingestion for future use; no MVP UI beyond appearing in the Syllabus Review)
-- `id`, `course_id`, `day_of_week` (0–6, Monday = 0), `start_time`, `end_time`, `location`
-- Not required. If the syllabus lists a meeting schedule, Claude extracts it. Future features (blocking off class time on the calendar, contextualizing "office hours right after class") will read from these rows; MVP simply persists them.
+**ClassMeeting** (a regular class session — lecture, recitation, lab, seminar, or other)
+- `id`, `course_id`, `kind` (`lecture | recitation | lab | seminar | other`), `section` (nullable free-text label when the syllabus lists alternatives, e.g. `"A"`, `"L01"`), `is_mine` (bool — whether this row belongs on the student's personal Week Schedule), `day_of_week` (0–6, Monday = 0), `start_time`, `end_time`, `location`
+- Not required. If the syllabus lists a meeting schedule, Claude extracts it with kinds and section labels.
+- **No formal `CourseSection` entity.** Ownership is per row via `is_mine`. The student can flip Mine on any meeting during Syllabus Review or later on the Meetings tab.
+- **Extraction defaults for `is_mine`:** if a kind has no section alternatives (all `section` null, or only one meeting of that kind), rows are marked `is_mine = true`. If a kind has multiple rows with distinct non-null sections, all of those rows start `is_mine = false` and the student must mark at least one Mine before commit.
+- Shared lectures (`section` null) stay mine even when recitations/labs have section alternatives.
+- Week Schedule shows only `is_mine` meetings; non-mine section alternatives remain visible on the Course Detail Meetings tab.
 
 **CourseMaterial** (textbook, reading, or other required/recommended supply)
 - `id`, `course_id`, `kind` (`textbook | book | other`), `title`, `authors` (nullable), `edition` (nullable), `isbn` (nullable), `publisher` (nullable), `year` (nullable int), `url` (nullable), `requirement` (`required | recommended`), `notes` (nullable), `source` (`syllabus | manual`), `created_at`, `updated_at`
@@ -191,14 +195,17 @@ The single most important flow. Four steps:
          "host_name": "string"
        }
      ],
-     "class_meetings": [
-       {
-         "day_of_week": 0,
-         "start_time": "HH:MM",
-         "end_time": "HH:MM",
-         "location": "string"
-       }
-     ],
+    "class_meetings": [
+      {
+        "kind": "lecture | recitation | lab | seminar | other",
+        "section": "string | null",
+        "is_mine": true,
+        "day_of_week": 0,
+        "start_time": "HH:MM",
+        "end_time": "HH:MM",
+        "location": "string"
+      }
+    ],
      "materials": [
        {
          "kind": "textbook | book | other",
@@ -231,6 +238,7 @@ The single most important flow. Four steps:
 - **Expand recurring assignments.** If the syllabus specifies a recurring item ("weekly reading responses due every Sunday", "biweekly problem sets on Fridays") and the semester's `start_date` and `end_date` are provided, Claude expands the range into concrete-dated rows (e.g. 14 rows for a weekly item over 14 weeks, each with the same `points_possible` and `category_name`). If semester dates are missing, Claude returns a single row with `due_date: null` and a name that hints at the recurrence (e.g. `"Weekly reading response (recurring — set dates manually)"`), so the user knows to expand or backfill later.
 - **Default category fallback.** If the syllabus states no grade weightings at all (some do — "based on effort, quizzes, and participation" without percentages), Claude returns `grade_categories: [{ "name": "Overall", "weight_pct": 100, "drop_lowest_n": 0 }]` and puts every assignment's `category_name` as `"Overall"`. The user can restructure on the review screen.
 - For `office_hours.location`, preserve whatever the syllabus states verbatim: a room (`"GHC 5219"`), a Zoom URL (`"https://cmu.zoom.us/j/12345"`), or a hybrid (`"GHC 5219 + zoom.us/j/12345"`). Do not paraphrase or shorten URLs. If a host has a persistent personal Zoom room mentioned once alongside their name, put that URL on the `OfficeHourHost.zoom_link` (populated at commit time from the host roster context) rather than repeating it on every block.
+- For `class_meetings`, assign `kind` from syllabus wording (`reci` / PSO / discussion → `recitation`; laboratory → `lab`; unknown course-specific sub-sessions → `other`). Set `section` when the syllabus lists alternate sections for the same kind; otherwise `null`. Set `is_mine` per the ClassMeeting rules above (auto-true when unsectioned; false when multiple section alternatives exist so the student picks on review).
 - For `materials`, extract structured rows — never dump bibliography prose into `notes`. Use `kind` `textbook` for primary course texts (fill edition/ISBN/publisher/year/url when present), `book` for other readings (title + authors; versions in `notes`), `other` for non-book supplies (name in `title`). Default `requirement` to `"required"` when unclear.
 - For `notes`, **skip generic university boilerplate**: Title IX statements, generic academic integrity language, disability accommodations sections, drop/withdraw deadlines, generic grading-appeal procedures, and other content that would appear identically across most syllabi at the school. **Only include course-specific content** the instructor is emphasizing: unusual late-work policy, particular attendance rules, laptop/phone rules, communication expectations, unique exam structure, etc. Do **not** put textbooks or supply lists in `notes`. If nothing course-specific is worth surfacing, return `"notes": []`.
 - All output text is in **English**. If the syllabus is in another language, translate values to English while preserving proper nouns, room codes, URLs, and course codes verbatim.
@@ -239,6 +247,7 @@ The single most important flow. Four steps:
 
 - If category weights don't sum to 100, the review screen flags it and blocks commit until resolved.
 - If the syllabus doesn't state a grading scale (or Claude can't find one), the review screen pre-fills the standard 10-point scale, which the user can accept or edit before committing.
+- **Section pick gate.** If any meeting kind has ≥2 rows with distinct non-null `section` values and none of those sectioned rows are marked `is_mine`, the review screen blocks commit until the student marks which section(s) are theirs.
 - **Incomplete-extraction banner.** If Claude returns very few rows (e.g. fewer than 3 assignments and empty office hours) — a strong signal the PDF may be a scan or the extraction went sideways — the review screen shows a prominent banner: *"This extraction looks incomplete. If this is a scanned PDF, try pasting the syllabus text instead."* with a link to the paste-text alternative flow.
 - **No-assignments messaging.** If the extraction returned zero assignments (some courses issue everything week-by-week via Canvas), the review screen shows a milder note: *"No dated assignments found in this syllabus. You can add them as they're posted."* — commit is not blocked.
 
@@ -317,7 +326,7 @@ Python FastAPI backend. Claude is called **only from the backend** so the Anthro
 
 - **Palette:** warm off-white background `#FAF7F2`, deep ink text `#1B1B1F`, single accent for actions `#D97757` (muted terracotta). Each course gets its own swatch for gradebook/calendar accents.
 - **Colors are semantic tokens, not hex values in components.** All palette colors live as CSS custom properties at the document root (`--color-bg`, `--color-fg`, `--color-accent`, `--color-surface`, `--color-muted`) and are exposed to Tailwind as `bg-bg`, `text-fg`, `bg-accent`, etc. Components never hardcode hex codes.
-- **Per-course accent.** Each Course Detail page overrides `--color-accent` at its wrapper element with the course's `color` field. Buttons, active tabs, calendar dots for that course's assignments, and the current-time line on Office Hour Week all inherit that value automatically — one CSS variable override, whole page re-themes.
+- **Per-course accent.** Each Course Detail page overrides `--color-accent` at its wrapper element with the course's `color` field. Buttons, active tabs, calendar dots for that course's assignments, and the current-time line on Week Schedule all inherit that value automatically — one CSS variable override, whole page re-themes.
 - **Themeable by construction.** Because everything routes through CSS variables, adding an entire new theme (Midnight, Sage, Paperwhite, ...) is a ~10-line CSS class that redefines the variables — zero component changes. See the Stretch list; this pairs with the customization goal in **Vibe** below.
 - **Typography:** Inter for UI copy; JetBrains Mono for grades and numbers (makes the gradebook feel precise and calculator-like).
 - **Style direction:** calm, information-dense, *not* an AI chat app. Cards over drop shadows, generous whitespace around numbers, no chat bubbles anywhere in the UI. Every AI touchpoint (syllabus review, prediction query) uses structured input/output — never a conversational thread.
@@ -363,7 +372,7 @@ Login is via the Render-hosted backend (email/password or Google OAuth).
 - **2 — Live Syllabus.** PDF upload endpoint (10 MB cap), `pdfplumber` extraction, Claude structured-extraction prompt hardened against messy syllabi — including exam-vs-assignment classification, recurring-item expansion using semester dates, host roster extraction, class meeting extraction, course-specific note surfacing (with the boilerplate filter), and default-Overall-category fallback. Syllabus Review screen with editable tables and the incomplete-extraction banner. Commit flow creates paired `Assignment` + `GradebookEntry` rows. This is the flagship demo moment — polish it hardest.
 - **3 — Grade Math + Views.** Gradebook UI with the split model: entries auto-populated from assignments, plus manual attendance/participation entries and hide/delete affordances independent from the Assignments tab. Grade math engine with unit tests including extra-credit cases (this is the one place a subtle bug destroys credibility). Query-box prediction flow (backend endpoint + minimal frontend UI). Calendar screen (month view first) with drag-and-drop rescheduling and distinct exam rendering. Course Detail Instructors tab. Conditional Notes tab.
 - **4 — Polish.** Google OAuth. Empty states, error states, mobile responsive pass. Demo script + README + short walkthrough video.
-- **5 — Stretch pack.** `drop_lowest_n` in grade math. Calendar week + list views (drag-and-drop on each). Consolidated Office Hour Week across courses.
+- **5 — Stretch pack.** `drop_lowest_n` in grade math. Calendar week + list views (drag-and-drop on each). Consolidated Week Schedule across courses.
 
 ## MVP vs Stretch
 
@@ -388,17 +397,17 @@ Login is via the Render-hosted backend (email/password or Google OAuth).
 - Scenarios table for multi-item predictions
 - `drop_lowest_n` support in category math
 - Calendar week and list views (with drag-and-drop on both)
-- Consolidated Office Hour Week view (cross-course grid, host filter, live now-line)
+- Consolidated Week Schedule view (cross-course grid; My schedule + Office hours layer toggles; host filter on OH; live now-line)
 - Textbooks / required materials as a first-class `CourseMaterial` entity (Materials tab always on)
+- Class meeting `kind` (`lecture | recitation | lab | seminar | other`), nullable `section`, and per-row `is_mine` with Syllabus Review section-pick gate
+- Course Detail **Meetings** tab (group by kind, mine pinned/highlighted, full CRUD)
 
 **Stretch (remaining, in priority order):**
 1. User-selectable themes via CSS-variable class swap
 2. Course-level image/cover upload for the Vibe customization goal
 3. Notifications / reminders ("your midterm is tomorrow" — browser push or email)
-4. **Additional class-hour types** (recitations, labs, seminars, "MATLAB reci" and other course-specific sub-sessions). MVP folds everything into a single `ClassMeeting` entity, which loses the distinction between a normal lecture and, say, a required Friday MATLAB recitation. A future revision could add a `kind` (`lecture | recitation | lab | seminar | other`) to `ClassMeeting` so the calendar and future "class-meeting-aware" features can differentiate them. Deferred because the long tail of naming conventions ("reci", "PSO", "SI session", ...) makes fully-modeled taxonomy unbounded, and lumping into `ClassMeeting` is the least wrong default.
-5. Class meeting calendar
-6. **Drag-to-reorder semester tabs.** The folder-style switcher currently renders tabs in creation order (older on the left, newer on the right) and holds that order regardless of which semester is active. Drag-to-reorder would let students group tabs by their own logic (e.g. current semester on the far left even if it wasn't created first). Requires an `order_index` column on `Semester`, a `PUT /semesters/order` endpoint that accepts an ordered list of slugs, and HTML5 drag handlers on each tab with an optimistic-update mutation.
-7. **Paired rename prompt.** Renaming an `Assignment` does **not** propagate to its linked `GradebookEntry` (and vice versa) — intentional split-model divergence. Stretch UX: when the user renames one half of a pair that still shares a `source_assignment_id` link, offer "Rename the linked gradebook entry / assignment too?" so they can keep labels in sync without losing the option to diverge. MVP keeps independent inline renames on each tab.
+4. **Drag-to-reorder semester tabs.** The folder-style switcher currently renders tabs in creation order (older on the left, newer on the right) and holds that order regardless of which semester is active. Drag-to-reorder would let students group tabs by their own logic (e.g. current semester on the far left even if it wasn't created first). Requires an `order_index` column on `Semester`, a `PUT /semesters/order` endpoint that accepts an ordered list of slugs, and HTML5 drag handlers on each tab with an optimistic-update mutation.
+5. **Paired rename prompt.** Renaming an `Assignment` does **not** propagate to its linked `GradebookEntry` (and vice versa) — intentional split-model divergence. Stretch UX: when the user renames one half of a pair that still shares a `source_assignment_id` link, offer "Rename the linked gradebook entry / assignment too?" so they can keep labels in sync without losing the option to diverge. MVP keeps independent inline renames on each tab.
 
 ## Constraints & Non-Goals
 
@@ -416,7 +425,8 @@ Login is via the Render-hosted backend (email/password or Google OAuth).
 - A new user can go from landing page to a fully-populated first course in **under 3 minutes** using only a PDF syllabus: Login → Semester Setup → Add Course → Upload → Review → Commit.
 - Gradebook math is verifiable by hand against the worked example in the Grade Math Semantics section, and is covered by backend unit tests. Assignments and exams contribute identically. Extra credit (`points_earned > points_possible` or `points_possible = 0`) is handled without special casing from the caller. Categories with `drop_lowest_n > 0` exclude that many lowest graded normal ratios before averaging.
 - The Calendar screen toggles month / week / list. Month and week support drag-and-drop reschedule; list is a chronological browse of the same events.
-- The Office Hour Week screen shows a consolidated cross-course grid, colored by course, with host filter and a live now-line on the current day column.
+- The Week Schedule screen (`/office-hours`) shows a consolidated cross-course grid with independent **My schedule** and **Office hours** layer toggles (default: schedule on, OH off), colored by course, with host filter on OH blocks and a live now-line on the current day column. Only `is_mine` class meetings appear on the schedule layer.
+- The Course Detail **Meetings** tab is always visible after syllabus commit. Meetings are grouped by `kind`; Mine rows are pinned and highlighted within each group.
 - The prediction query "what do I need on the final to get an A?" returns a **number** (or a scenarios table), never prose or a chat reply.
 - The **Assignments** tab and the **Gradebook** tab are independent: toggling `completed` on an `Assignment` does not affect its linked `GradebookEntry`, and vice versa. Deleting a `GradebookEntry` does not delete its linked `Assignment`.
 - The user can add a manual `GradebookEntry` (e.g. "Overall attendance") in any category without creating a paired `Assignment`.

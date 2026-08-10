@@ -104,7 +104,15 @@ class ExtractedOfficeHour(BaseModel):
         return self
 
 
+ClassMeetingKind = Literal[
+    "lecture", "recitation", "lab", "seminar", "other"
+]
+
+
 class ExtractedClassMeeting(BaseModel):
+    kind: ClassMeetingKind = "lecture"
+    section: str | None = Field(default=None, max_length=120)
+    is_mine: bool = False
     day_of_week: int = Field(ge=0, le=6)
     start_time: time
     end_time: time
@@ -114,6 +122,13 @@ class ExtractedClassMeeting(BaseModel):
     @classmethod
     def _parse_hhmm(cls, v: object) -> object:
         return _coerce_hhmm(v)
+
+    @field_validator("section", mode="before")
+    @classmethod
+    def _empty_section_to_none(cls, v: object) -> object:
+        if isinstance(v, str) and not v.strip():
+            return None
+        return v
 
     @model_validator(mode="after")
     def _end_after_start(self) -> "ExtractedClassMeeting":
