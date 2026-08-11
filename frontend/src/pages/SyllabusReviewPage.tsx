@@ -170,12 +170,12 @@ export default function SyllabusReviewPage() {
             Step 2
           </p>
           <h1 className="mt-1 text-3xl font-semibold tracking-tight">
-            {isManual ? "Set up this course." : "Review the extraction."}
+            {isManual ? "Set up this course." : "Review your syllabus."}
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-muted">
             {isManual
               ? "Add categories, a grading scale, assignments, hosts, and anything else you want tracked. Nothing is saved until you hit commit."
-              : "Edit anything Claude got wrong. Nothing is saved until you hit commit. If a whole section looks off, use the delete buttons and add rows manually."}
+              : "I hope you read your syllabus! Edit anything we got wrong. Nothing is saved until you hit commit. If anything looks off, use the delete buttons and add rows manually. You can also add more information later from the live tabs after commit."}
           </p>
         </div>
 

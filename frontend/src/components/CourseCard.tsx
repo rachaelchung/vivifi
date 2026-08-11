@@ -85,7 +85,7 @@ export function CourseCard({ course, onDelete }: CourseCardProps) {
               {isCommitted
                 ? percentage === null
                   ? "Enter your first grade to see it here."
-                  : "Live from your gradebook."
+                  : "From your gradebook"
                 : "Bring this course to life."}
             </p>
           </div>

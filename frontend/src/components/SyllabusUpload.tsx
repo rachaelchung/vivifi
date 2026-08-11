@@ -128,9 +128,7 @@ export function SyllabusUpload({
             onChange={handleFilePicked}
           />
           <p className="mt-4 max-w-md text-xs text-muted">
-            Vivifi extracts the text with pdfplumber and sends it to Claude to
-            structure. Nothing is stored on our servers until you confirm the
-            extraction on the next screen.
+            Uploaded syllabi are not stored on our servers but are processed by AI. <br></br><em>Please do not upload documents containing confidential or private information.</em>
           </p>
         </div>
       ) : (
@@ -147,8 +145,7 @@ export function SyllabusUpload({
           />
           <div className="flex items-center justify-between">
             <p className="hint">
-              Use this when the PDF is a scan or Vivifi can't read it. We send
-              the text to Claude to structure it.
+              Use this when the syllabus is not in a format that can be uploaded. Pasted info is not stored on our servers but is processed by AI. <br></br><em>Please do not upload confidential or private information.</em>
             </p>
             <button
               type="submit"

@@ -44,7 +44,7 @@ export function AddCourseTile({ onClick, emphasis = false }: AddCourseTileProps)
       </span>
       <span className="text-sm font-medium">Add course</span>
       <span className="text-xs text-muted">
-        Start with a name; upload the syllabus later.
+        Start with a name; then upload the syllabus.
       </span>
     </button>
   );

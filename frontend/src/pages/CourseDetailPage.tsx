@@ -182,7 +182,7 @@ export default function CourseDetailPage() {
                   <p className="mt-2 max-w-2xl text-sm text-muted">
                     Upload the syllabus (PDF, or paste the text). Vivifi extracts
                     the course meta, grade breakdown, assignments, exams, hosts,
-                    office hours, and materials. You review and edit everything
+                    office hours, and materials. Review and edit everything
                     on the next screen before anything is saved.
                   </p>
                 </div>
@@ -195,7 +195,7 @@ export default function CourseDetailPage() {
 
                 <div className="mt-8 flex flex-col items-center gap-3 border-t border-border pt-8 text-center">
                   <p className="text-sm text-muted">
-                    No syllabus handy? You can still fill everything in by hand.
+                    No syllabus handy? Fill in everything in by hand.
                   </p>
                   <button
                     type="button"
