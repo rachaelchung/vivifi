@@ -53,7 +53,7 @@ Language models are good at reading a messy PDF and understanding how a person p
 This app was created for Stellic Pathfinder's Challenge 2026. The prompt I chose was Overcoming Obstacles:
 Help students navigate cost, paperwork, scheduling, requirements, and the friction that gets in the way. As a part of the challenge, we were provided Claude credits and encouraged to build with AI-assistance.
 
-This app was built within Cursor using the Opus 4.5 Model and the Auto model (which uses multiple different models within Cursor). The landing page was built with Claude Sonnet 5.
+This app was built within Cursor using the Opus 5 Model and the Auto model (which uses multiple different models within Cursor). The landing page was built with Claude Sonnet 5.
 
 ## Repo layout
 
