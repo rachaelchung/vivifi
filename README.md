@@ -10,7 +10,7 @@ The full product spec lives in [SPEC.md](./SPEC.md).
 
 Visit the live project at: https://rachaelchung.github.io/vivifi/
 
-**NOTE: This app is a demo project and was built with AI. Please regard it's multiple limitations:**
+**NOTE: This app is a demo project for Stellic Pathfinders Competition 2026 and was built with AI. Please regard it's multiple limitations:**
 - The API Key for this app expires **September 28th, 2026**, thus rendering the live app largely unusable after this date.
 - **API credits are limited.** Once they are gone, they will not be refilled.
 - **Data may vanish** when the database is full or retired. Do not treat information like it is permanent.
