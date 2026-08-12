@@ -2,6 +2,8 @@
 
 This app is called "Vivifi". It turns a static syllabus into a live view of your semester: grades, assignments, exams, instructors, office hours, and any course-specific notes worth surfacing. Upload each syllabus once at the start of the term, and Vivifi does the rest. The goal is to remove the friction that comes from professors not keeping Canvas updated, and to spare students the manual bookkeeping that eats the first two weeks of every term.
 
+The inital problem arises from gradebook that aren't managed well by professors. Students need some agency in knowing their grades, since professors have lots of other things to handle. Your syllabus is meant to be a one-stop shop to success, but it's information get's easily lost or dismissed.
+
 ## Overview
 
 **The pitch:** Your syllabus is a static document — sometimes still a piece of paper handed out in week one. But classes aren't static. Profs update dates, adjust weightings, add readings, cancel classes. The document doesn't move. In a digital age, that gap feels absurd. Introducing Vivifi: a syllabus visualizer that turns your syllabus into a live view of the course. Watch your grade in real time. See what's coming up. Know who your TAs are and when they hold office hours. Pick up on the notes your prof buried on page 4. Move an assignment when a deadline shifts. Enter a grade when you get one back and watch the math update. Your syllabus, alive.
