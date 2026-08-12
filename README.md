@@ -16,7 +16,6 @@ Visit the live project at: https://rachaelchung.github.io/vivifi/
 - **Data may vanish** when the database is full or retired. Do not treat information like it is permanent.
 - Render spins down after 15 minutes and **may take up to one minute to spin-up.** This project is being kept alive by an Uptime Robot until the competition window closes in late September.
 - Syllabus text is sent to Anthropic. Things you send to AI **cannot be considered private.**
-- Some SPEC items **were not built.**
 - Auth is suitable for **demo-only**. Please use a throwaway password and consider that sessions can be leaked.
 - **Built quickly and with AI for a challenge. Do not expect a highly polished product**
 
