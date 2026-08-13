@@ -102,7 +102,7 @@ function BigAnswer({ result }: { result: PredictResponse }) {
   if (result.kind === "current_grade" && result.current_pct !== null) {
     return (
       <p className="font-num text-4xl font-semibold tracking-tight">
-        {round1(result.current_pct)}%
+        {round2(result.current_pct)}%
         {result.current_letter ? (
           <span className="ml-3 text-2xl text-muted">
             {result.current_letter}
@@ -120,7 +120,7 @@ function BigAnswer({ result }: { result: PredictResponse }) {
             (result.reachable === false ? "text-danger" : "text-fg")
           }
         >
-          {round1(result.answer)}%
+          {round2(result.answer)}%
         </p>
         {result.needed_points !== null &&
         result.kind === "needed_on_entry" &&
@@ -183,7 +183,7 @@ function ScenarioRow({ scenario: s }: { scenario: Scenario }) {
               (!s.reachable ? "text-danger" : "text-fg")
             }
           >
-            {round1(s.resulting_grade_pct)}%
+            {round2(s.resulting_grade_pct)}%
           </p>
           {s.resulting_letter ? (
             <p className="font-num text-sm text-muted">{s.resulting_letter}</p>
@@ -219,7 +219,7 @@ function ScenarioRow({ scenario: s }: { scenario: Scenario }) {
                       : "text-fg")
                 }
               >
-                {showAny ? "any" : `${round1(Math.max(0, leg.pct))}%`}
+                {showAny ? "any" : `${round2(Math.max(0, leg.pct))}%`}
               </span>
               <span className="uppercase tracking-wider text-[10px]">
                 ({leg.role})
@@ -237,7 +237,7 @@ function ReweightNotice({ info }: { info: ReweightApplied }) {
     <div className="mb-3 rounded-md border border-accent/30 bg-accent/5 p-3 text-xs">
       <p className="font-medium text-fg">
         Assuming <span className="font-semibold">{info.new_category_name}</span>{" "}
-        is worth <span className="font-num">{round1(info.new_weight_pct)}%</span>.
+        is worth <span className="font-num">{round2(info.new_weight_pct)}%</span>.
       </p>
       <p className="mt-1 text-muted">
         Existing categories scaled proportionally:{" "}
@@ -246,7 +246,7 @@ function ReweightNotice({ info }: { info: ReweightApplied }) {
             {i > 0 ? ", " : ""}
             {s.name}{" "}
             <span className="font-num">
-              {round1(s.original_weight_pct)}% → {round1(s.scaled_weight_pct)}%
+              {round2(s.original_weight_pct)}% → {round2(s.scaled_weight_pct)}%
             </span>
           </span>
         ))}
@@ -256,6 +256,6 @@ function ReweightNotice({ info }: { info: ReweightApplied }) {
   );
 }
 
-function round1(n: number): number {
-  return Math.round(n * 10) / 10;
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
 }

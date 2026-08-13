@@ -99,7 +99,7 @@ function CurrentGradeHeader({
           </p>
           {hasGrade ? (
             <p className="font-num mt-1 text-5xl font-semibold tracking-tight">
-              {Math.round(grade.percentage! * 10) / 10}%
+              {formatPct(grade.percentage!)}%
               {grade.letter ? (
                 <span className="ml-3 text-2xl text-muted">
                   {grade.letter}
@@ -121,7 +121,7 @@ function CurrentGradeHeader({
               {grade.target_pct !== null &&
               String(grade.target_pct) !== grade.target ? (
                 <span className="ml-2 text-sm text-muted">
-                  ({Math.round(grade.target_pct * 10) / 10}%)
+                  ({formatPct(grade.target_pct)}%)
                 </span>
               ) : null}
             </p>
@@ -144,7 +144,7 @@ function CurrentGradeHeader({
               </div>
               <p className="font-num mt-1 text-lg">
                 {cat.earned_pct !== null
-                  ? `${Math.round(cat.earned_pct * 10) / 10}%`
+                  ? `${formatPct(cat.earned_pct)}%`
                   : "—"}
               </p>
             </div>
@@ -168,8 +168,7 @@ function CurrentGradeHeader({
 }
 
 function formatPct(n: number): string {
-  const rounded = Math.round(n * 10) / 10;
-  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+  return String(Math.round(n * 100) / 100);
 }
 
 // --- entries -------------------------------------------------------------
@@ -418,7 +417,7 @@ function EntryRow({
         <input
           className="input w-20 py-1 text-right font-num"
           type="number"
-          step="0.5"
+          step="0.01"
           value={earnedInput}
           onChange={(e) => setEarnedInput(e.target.value)}
           onBlur={commitEarned}
@@ -435,7 +434,7 @@ function EntryRow({
             className="w-16 border-0 border-b border-border bg-transparent py-1 text-right font-num text-sm text-muted outline-none focus:border-fg"
             type="number"
             min="0"
-            step="0.5"
+            step="0.01"
             value={possibleInput}
             onChange={(e) => setPossibleInput(e.target.value)}
             onBlur={commitPossible}
@@ -582,7 +581,7 @@ function AddEntryForm({
           className="input font-num"
           type="number"
           min="0"
-          step="0.5"
+          step="0.01"
           placeholder="Earned"
           value={pointsEarned}
           onChange={(e) => setPointsEarned(e.target.value)}
@@ -591,7 +590,7 @@ function AddEntryForm({
           className="input font-num"
           type="number"
           min="0"
-          step="0.5"
+          step="0.01"
           placeholder="Possible"
           value={pointsPossible}
           onChange={(e) => setPointsPossible(e.target.value)}

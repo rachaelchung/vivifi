@@ -1077,11 +1077,12 @@ def apply_reweight(
 
 
 def _fmt_pct(value: float) -> str:
-    # Trim to at most 1 decimal place; drop trailing .0 for integer-ish values.
-    rounded = round(value, 1)
+    # Trim to at most 2 decimal places; drop trailing zeros for integer-ish values.
+    rounded = round(value, 2)
     if rounded == int(rounded):
         return f"{int(rounded)}%"
-    return f"{rounded:.1f}%"
+    text = f"{rounded:.2f}".rstrip("0").rstrip(".")
+    return f"{text}%"
 
 
 def _fmt_points(earned: float, possible: float) -> str:

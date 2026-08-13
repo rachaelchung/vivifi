@@ -392,7 +392,7 @@ export function AssignmentsSection({
                 className="input font-num"
                 type="number"
                 min={0}
-                step="0.5"
+                step="0.01"
                 value={a.points_possible}
                 onChange={(e) =>
                   update(idx, { points_possible: Number(e.target.value) || 0 })

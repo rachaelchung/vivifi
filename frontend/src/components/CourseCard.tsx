@@ -54,7 +54,7 @@ export function CourseCard({ course, onDelete }: CourseCardProps) {
                 </span>
                 <span className="font-num text-2xl font-semibold text-fg">
                   {percentage !== null && percentage !== undefined
-                    ? `${Math.round(percentage * 10) / 10}%`
+                    ? `${Math.round(percentage * 100) / 100}%`
                     : "—"}
                   {letter ? (
                     <span className="ml-2 text-base text-muted">{letter}</span>

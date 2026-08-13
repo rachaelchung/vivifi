@@ -272,10 +272,10 @@ def _dispatch_plan(
         if passing_letter:
             plan.narrative_prefix = (
                 f"Passing here means a {passing_letter} "
-                f"({round(target_pct, 1)}%)"
+                f"({_fmt_num(target_pct)}%)"
             )
         else:
-            plan.narrative_prefix = f"Passing here means {round(target_pct, 1)}%"
+            plan.narrative_prefix = f"Passing here means {_fmt_num(target_pct)}%"
 
     # Route by focus.
     if (
@@ -363,7 +363,7 @@ def _respond_current_grade(
         reachable=None,
         already_locked_in=None,
         explanation=(
-            f"Your current grade is {round(cg.percentage, 1)}%"
+            f"Your current grade is {_fmt_num(cg.percentage)}%"
             + (f" ({cg.letter})" if cg.letter else "")
             + "."
         ),
@@ -534,7 +534,7 @@ def _respond_scenarios(
             target=target_display,
             target_pct=target_pct,
             explanation=(
-                f"Your final grade is {round(current_pct, 1)}%"
+                f"Your final grade is {_fmt_num(current_pct)}%"
                 + (f" ({cg.letter})" if cg.letter else "")
                 + f". {verdict}"
             ),
@@ -591,13 +591,13 @@ def _target_display(spec: TargetSpec | None) -> str | None:
 
 def _fmt_target(target_display: str | None, target_pct: float) -> str:
     if target_display is None:
-        return f"{round(target_pct, 1)}%"
+        return f"{_fmt_num(target_pct)}%"
     # If display is already numeric-looking, just show it once.
     if target_display.replace(".", "").isdigit():
-        return f"{round(target_pct, 1)}%"
+        return f"{_fmt_num(target_pct)}%"
     if target_display == "passing":
-        return f"passing ({round(target_pct, 1)}%)"
-    return f"{target_display} ({round(target_pct, 1)}%)"
+        return f"passing ({_fmt_num(target_pct)}%)"
+    return f"{target_display} ({_fmt_num(target_pct)}%)"
 
 
 def _fmt_num(n: float) -> str:
