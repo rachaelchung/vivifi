@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 
 import type { Assignment, AssignmentKind } from "@/api/types";
 import {
@@ -7,6 +7,7 @@ import {
   useDeleteAssignment,
   useUpdateAssignment,
 } from "@/api/liveViews";
+import { DatePicker } from "@/components/DatePicker";
 import { EmptyState } from "@/components/EmptyState";
 import { InlineEditableText } from "@/components/InlineEditableText";
 
@@ -263,10 +264,13 @@ function AssignmentRow({
           </p>
         ) : null}
       </div>
-      <DueDateControl
+      <DatePicker
+        variant="chip"
         value={assignment.due_date}
         struck={done}
         accent={isExam}
+        placeholder="No due date"
+        clearLabel="No due date"
         ariaLabel={`Change due date for ${assignment.name}`}
         onChange={(due_date) =>
           update.mutate({
@@ -284,194 +288,6 @@ function AssignmentRow({
         <TrashIcon />
       </button>
     </div>
-  );
-}
-
-/**
- * Visible date chip that opens a calendar popover. The native
- * `input[type=date]` picker (via showPicker on a hidden input) often
- * ignores outside clicks, so we own open/close ourselves.
- */
-function DueDateControl({
-  value,
-  onChange,
-  ariaLabel,
-  struck = false,
-  accent = false,
-}: {
-  value: string | null;
-  onChange: (next: string | null) => void;
-  ariaLabel: string;
-  struck?: boolean;
-  accent?: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const wrapRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-
-    function handlePointer(event: MouseEvent) {
-      if (!wrapRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    }
-    function handleKey(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
-    }
-
-    document.addEventListener("mousedown", handlePointer);
-    document.addEventListener("keydown", handleKey);
-    return () => {
-      document.removeEventListener("mousedown", handlePointer);
-      document.removeEventListener("keydown", handleKey);
-    };
-  }, [open]);
-
-  return (
-    <div
-      ref={wrapRef}
-      className={"relative flex-shrink-0" + (open ? " z-40" : "")}
-    >
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className={
-          "block w-[7.5rem] rounded-md border px-2.5 py-1 text-right font-num text-xs text-fg " +
-          (accent
-            ? "border-accent/40 bg-accent/10 hover:border-accent/70 "
-            : "border-border bg-surface hover:border-fg/30 ") +
-          (struck ? "line-through " : "")
-        }
-        aria-label={ariaLabel}
-        aria-expanded={open}
-        aria-haspopup="dialog"
-        title="Change due date"
-      >
-        {formatDate(value)}
-      </button>
-      {open ? (
-        <DatePickerPopover
-          value={value}
-          onSelect={(next) => {
-            if (next !== value) onChange(next);
-            setOpen(false);
-          }}
-        />
-      ) : null}
-    </div>
-  );
-}
-
-const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
-
-function DatePickerPopover({
-  value,
-  onSelect,
-}: {
-  value: string | null;
-  onSelect: (next: string | null) => void;
-}) {
-  const [cursor, setCursor] = useState(() => {
-    const d = value ? parseISODate(value) : new Date();
-    return new Date(d.getFullYear(), d.getMonth(), 1);
-  });
-
-  const year = cursor.getFullYear();
-  const month = cursor.getMonth();
-  const cells = monthCells(year, month);
-  const todayIso = toISODate(new Date());
-  const monthLabel = cursor.toLocaleDateString(undefined, {
-    month: "long",
-    year: "numeric",
-  });
-
-  return (
-    <div
-      role="dialog"
-      aria-label="Choose due date"
-      className="absolute right-0 top-full z-40 mt-1.5 w-[17.5rem] rounded-xl border border-border bg-surface p-3 shadow-card"
-    >
-      <div className="mb-2 flex items-center justify-between">
-        <button
-          type="button"
-          className="rounded p-1 text-muted hover:bg-bg hover:text-fg"
-          aria-label="Previous month"
-          onClick={() => setCursor(new Date(year, month - 1, 1))}
-        >
-          <ChevronIcon dir="left" />
-        </button>
-        <p className="text-sm font-medium">{monthLabel}</p>
-        <button
-          type="button"
-          className="rounded p-1 text-muted hover:bg-bg hover:text-fg"
-          aria-label="Next month"
-          onClick={() => setCursor(new Date(year, month + 1, 1))}
-        >
-          <ChevronIcon dir="right" />
-        </button>
-      </div>
-      <div className="grid grid-cols-7 gap-0.5">
-        {WEEKDAYS.map((d, i) => (
-          <div
-            key={`${d}-${i}`}
-            className="py-1 text-center text-[10px] font-medium uppercase tracking-wider text-muted"
-          >
-            {d}
-          </div>
-        ))}
-        {cells.map((iso, i) =>
-          iso ? (
-            <button
-              key={iso}
-              type="button"
-              onClick={() => onSelect(iso)}
-              className={
-                "h-8 rounded-md font-num text-xs transition-colors " +
-                (iso === value
-                  ? "bg-accent text-accent-fg "
-                  : iso === todayIso
-                    ? "text-accent hover:bg-bg "
-                    : "text-fg hover:bg-bg ")
-              }
-            >
-              {Number(iso.slice(8))}
-            </button>
-          ) : (
-            <div key={`pad-${i}`} />
-          ),
-        )}
-      </div>
-      <button
-        type="button"
-        className="mt-2 w-full rounded-md py-1.5 text-xs text-muted hover:bg-bg hover:text-fg"
-        onClick={() => onSelect(null)}
-      >
-        No due date
-      </button>
-    </div>
-  );
-}
-
-function ChevronIcon({ dir }: { dir: "left" | "right" }) {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      {dir === "left" ? (
-        <path d="M15 18l-6-6 6-6" />
-      ) : (
-        <path d="M9 18l6-6-6-6" />
-      )}
-    </svg>
   );
 }
 
@@ -523,11 +339,12 @@ function AddAssignmentForm({
           <option value="assignment">Assignment</option>
           <option value="exam">Exam</option>
         </select>
-        <input
-          className="input"
-          type="date"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
+        <DatePicker
+          value={dueDate || null}
+          placeholder="Due date"
+          clearLabel="No due date"
+          ariaLabel="Due date"
+          onChange={(next) => setDueDate(next ?? "")}
         />
       </div>
       <textarea
@@ -553,40 +370,6 @@ function AddAssignmentForm({
 }
 
 // --- utilities ------------------------------------------------------------
-
-function formatDate(iso: string | null): string {
-  if (!iso) return "No due date";
-  return new Date(iso + "T00:00:00").toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-/** Local calendar day as YYYY-MM-DD (avoids UTC shift from toISOString). */
-function toISODate(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-function parseISODate(iso: string): Date {
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Date(y, m - 1, d);
-}
-
-function monthCells(year: number, month: number): (string | null)[] {
-  const firstDow = new Date(year, month, 1).getDay();
-  const days = new Date(year, month + 1, 0).getDate();
-  const cells: (string | null)[] = [];
-  for (let i = 0; i < firstDow; i++) cells.push(null);
-  for (let d = 1; d <= days; d++) {
-    cells.push(toISODate(new Date(year, month, d)));
-  }
-  while (cells.length % 7 !== 0) cells.push(null);
-  return cells;
-}
 
 function SourceBadge({ source }: { source: string }) {
   const label =

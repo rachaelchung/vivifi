@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { ApiError } from "@/api/client";
 import { useUpdateSemester } from "@/api/semesters";
 import type { Semester } from "@/api/types";
+import { DatePicker } from "@/components/DatePicker";
 import { Modal } from "@/components/Modal";
 
 interface EditSemesterModalProps {
@@ -82,24 +83,26 @@ export function EditSemesterModal({
             <label className="label" htmlFor="edit-semester-start">
               Start date <span className="text-muted">(optional)</span>
             </label>
-            <input
+            <DatePicker
               id="edit-semester-start"
-              type="date"
-              className="input"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              value={startDate || null}
+              placeholder="No date"
+              clearLabel="Clear"
+              ariaLabel="Semester start date"
+              onChange={(next) => setStartDate(next ?? "")}
             />
           </div>
           <div>
             <label className="label" htmlFor="edit-semester-end">
               End date <span className="text-muted">(optional)</span>
             </label>
-            <input
+            <DatePicker
               id="edit-semester-end"
-              type="date"
-              className="input"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
+              value={endDate || null}
+              placeholder="No date"
+              clearLabel="Clear"
+              ariaLabel="Semester end date"
+              onChange={(next) => setEndDate(next ?? "")}
             />
           </div>
         </div>

@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ApiError } from "@/api/client";
 import { useCreateSemester, useSemesters } from "@/api/semesters";
 import { BrandMark } from "@/components/BrandMark";
+import { DatePicker } from "@/components/DatePicker";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function SemesterSetupPage() {
@@ -93,24 +94,26 @@ export default function SemesterSetupPage() {
                 <label className="label" htmlFor="start_date">
                   Start date <span className="text-muted">(optional)</span>
                 </label>
-                <input
+                <DatePicker
                   id="start_date"
-                  type="date"
-                  className="input"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  value={startDate || null}
+                  placeholder="No date"
+                  clearLabel="Clear"
+                  ariaLabel="Semester start date"
+                  onChange={(next) => setStartDate(next ?? "")}
                 />
               </div>
               <div>
                 <label className="label" htmlFor="end_date">
                   End date <span className="text-muted">(optional)</span>
                 </label>
-                <input
+                <DatePicker
                   id="end_date"
-                  type="date"
-                  className="input"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  value={endDate || null}
+                  placeholder="No date"
+                  clearLabel="Clear"
+                  ariaLabel="Semester end date"
+                  onChange={(next) => setEndDate(next ?? "")}
                 />
               </div>
             </div>

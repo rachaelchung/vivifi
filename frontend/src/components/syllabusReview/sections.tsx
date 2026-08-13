@@ -13,6 +13,7 @@ import type {
   MaterialKind,
   MaterialRequirement,
 } from "@/api/types";
+import { DatePicker } from "@/components/DatePicker";
 import {
   AddRowButton,
   SectionCard,
@@ -360,13 +361,12 @@ export function AssignmentsSection({
             </div>
             <div>
               <label className="hint">Due date</label>
-              <input
-                className="input"
-                type="date"
-                value={a.due_date ?? ""}
-                onChange={(e) =>
-                  update(idx, { due_date: e.target.value || null })
-                }
+              <DatePicker
+                value={a.due_date}
+                placeholder="No date"
+                clearLabel="No due date"
+                ariaLabel={`Due date for ${a.name || `assignment ${idx + 1}`}`}
+                onChange={(due_date) => update(idx, { due_date })}
               />
             </div>
             <div>
