@@ -15,6 +15,7 @@ import {
   useGradingScale,
   useUpdateGradebookEntry,
 } from "@/api/liveViews";
+import { EditGradingScaleModal } from "@/components/courseDetail/EditGradingScaleModal";
 import { PredictionBox } from "@/components/courseDetail/PredictionBox";
 import { InlineEditableText } from "@/components/InlineEditableText";
 
@@ -32,7 +33,8 @@ interface GradebookTabProps {
  *   Deleting an entry doesn't touch the paired Assignment (split model).
  * - Prediction "query box, not a chat" sits at the top of the tab.
  * - Course grading scale (`GradeScaleBand`) is shown alongside the current
- *   grade so letter cutoffs are visible without leaving the tab.
+ *   grade so letter cutoffs are visible without leaving the tab. Hover the
+ *   scale and click the pencil to replace the whole list via modal.
  */
 export function GradebookTab({ courseSlug }: GradebookTabProps) {
   const grade = useCurrentGrade(courseSlug);
@@ -57,6 +59,7 @@ export function GradebookTab({ courseSlug }: GradebookTabProps) {
   return (
     <div className="space-y-8">
       <CurrentGradeHeader
+        courseSlug={courseSlug}
         grade={grade.data ?? null}
         bands={scaleQ.data ?? []}
         scaleLoading={scaleQ.isLoading}
@@ -75,20 +78,24 @@ export function GradebookTab({ courseSlug }: GradebookTabProps) {
 // --- header --------------------------------------------------------------
 
 function CurrentGradeHeader({
+  courseSlug,
   grade,
   bands,
   scaleLoading,
   scaleError,
 }: {
+  courseSlug: string;
   grade: CurrentGrade | null;
   bands: GradeScaleBand[];
   scaleLoading: boolean;
   scaleError: boolean;
 }) {
+  const [editingScale, setEditingScale] = useState(false);
+
   if (!grade) return null;
   const hasGrade = grade.percentage !== null;
   const sorted = [...bands].sort((a, b) => b.min_pct - a.min_pct);
-  const showScale = !scaleLoading && !scaleError && sorted.length > 0;
+  const showScale = !scaleLoading && !scaleError;
 
   return (
     <section className="card p-6">
@@ -153,16 +160,40 @@ function CurrentGradeHeader({
       ) : null}
 
       {showScale ? (
-        <p className="font-num mt-5 overflow-x-auto whitespace-nowrap border-t border-border pt-3 text-xs text-muted">
-          {sorted.map((band, i) => (
-            <span key={band.id}>
-              {i > 0 ? <span className="mx-2 text-border">·</span> : null}
-              <span className="text-fg/80">{band.letter}</span>
-              <span className="ml-1">{formatPct(band.min_pct)}%+</span>
-            </span>
-          ))}
-        </p>
+        <div className="group mt-5 flex items-center gap-1.5 border-t border-border pt-3">
+          {sorted.length > 0 ? (
+            <p className="font-num min-w-0 flex-1 overflow-x-auto whitespace-nowrap text-xs text-muted">
+              {sorted.map((band, i) => (
+                <span key={band.id}>
+                  {i > 0 ? <span className="mx-2 text-border">·</span> : null}
+                  <span className="text-fg/80">{band.letter}</span>
+                  <span className="ml-1">{formatPct(band.min_pct)}%+</span>
+                </span>
+              ))}
+            </p>
+          ) : (
+            <p className="min-w-0 flex-1 text-xs text-muted">
+              No grading scale yet. Hover and click the pencil to add letter
+              cutoffs.
+            </p>
+          )}
+          <button
+            type="button"
+            className="shrink-0 rounded p-1 text-muted opacity-0 transition-opacity hover:bg-bg hover:text-fg group-hover:opacity-100 focus-visible:opacity-100"
+            onClick={() => setEditingScale(true)}
+            aria-label="Edit grading scale"
+          >
+            <PencilIcon />
+          </button>
+        </div>
       ) : null}
+
+      <EditGradingScaleModal
+        open={editingScale}
+        onClose={() => setEditingScale(false)}
+        courseSlug={courseSlug}
+        bands={bands}
+      />
     </section>
   );
 }
@@ -687,6 +718,25 @@ function TrashIcon() {
       <path d="M3 6h18" />
       <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
       <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+    </svg>
+  );
+}
+
+function PencilIcon() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
     </svg>
   );
 }
